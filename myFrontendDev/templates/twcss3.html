@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solution A — Hero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-800 p-8 md:p-12">
+
+    <div class="max-w-5xl mx-auto">
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-slate-900 mb-1">Solution A — Hero (Responsive + Buttons)</h2>
+            <p class="text-xs text-slate-500">หัวข้อ responsive (md:text-5xl), พื้นหลัง gradient, ปุ่ม primary/secondary</p>
+        </div>
+
+        <div class="bg-slate-50 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
+            
+            <div class="flex-1 w-full">
+                <p class="text-blue-600 text-[10px] font-bold tracking-widest uppercase mb-4">
+                    Tailwind CSS
+                </p>
+                
+                <h1 class="text-4xl md:text-5xl font-bold text-slate-900 leading-normal md:leading-snug mb-4">
+                    ยินดีต้อนรับสู่<br>
+                    Tailwind — สร้าง<br>
+                    UI ให้ <span class="text-blue-600">เร็วขึ้น</span>
+                </h1>
+                
+                <p class="text-slate-500 text-xs md:text-sm mb-8 leading-relaxed max-w-md">
+                    เดโมแนวคิด Utility-First + Responsive variants + ปุ่มพร้อม hover/active
+                </p>
+                
+                <div class="flex flex-wrap gap-3">
+                    <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs md:text-sm px-5 py-2.5 rounded shadow-sm transition-colors">
+                        ปุ่มหลัก (Primary)
+                    </button>
+                    <button type="button" class="bg-white border border-gray-300 hover:bg-gray-100 text-slate-700 font-medium text-xs md:text-sm px-5 py-2.5 rounded shadow-sm transition-colors">
+                        ปุ่มรอง (Secondary)
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 w-full">
+                <div class="w-full aspect-[4/3] rounded-2xl bg-gradient-to-br from-white to-blue-200 shadow-lg"></div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

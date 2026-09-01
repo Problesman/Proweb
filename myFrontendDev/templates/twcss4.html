@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solution C — Why Tailwind?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 p-8 md:p-12">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-12">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">Solution C — Why Tailwind? (Group Hover + Components)</h1>
+            <p class="text-slate-500">การ์ด 3 ใบพร้อมเอฟเฟกต์ group-hover และลิงก์สไตล์</p>
+        </div>
+
+        <div class="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-gray-100">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Why Tailwind?</h2>
+                <p class="text-slate-500">เดโม group-hover: เปลี่ยนสีพื้น/ไอคอนเมื่อ hover ทั้งการ์ด</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div class="group p-6 bg-white rounded-2xl shadow border border-gray-100 transition duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer flex flex-col">
+                    <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-2xl mb-5 transition-colors duration-300 group-hover:bg-blue-100">
+                        ⭐
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-1">สวยไว</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">ปรับ UI เร็วด้วย utilities</p>
+                    <a href="#" class="text-blue-600 font-medium text-sm transition-all group-hover:underline">ดูรายละเอียด</a>
+                </div>
+
+                <div class="group p-6 bg-white rounded-2xl shadow border border-gray-100 transition duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer flex flex-col">
+                    <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-2xl mb-5 transition-colors duration-300 group-hover:bg-blue-100">
+                        ⚙️
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-1">ประกอบง่าย</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">คุมเลย์เอาต์ด้วย Flex/Grid</p>
+                    <a href="#" class="text-blue-600 font-medium text-sm transition-all group-hover:underline">ตัวอย่าง</a>
+                </div>
+
+                <div class="group p-6 bg-white rounded-2xl shadow border border-gray-100 transition duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer flex flex-col">
+                    <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-2xl mb-5 transition-colors duration-300 group-hover:bg-blue-100">
+                        🌙
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-1">Dark Mode</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-grow">ใช้คลาส dark: เพื่อธีมมืด</p>
+                    <a href="#" class="text-blue-600 font-medium text-sm transition-all group-hover:underline">เรียนรู้วิธีทำ</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
