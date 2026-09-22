@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - GameTrade Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6" x-data="{ tab: 'overview' }">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0f172a] rounded-3xl border border-purple-900/40 p-6 shadow-2xl">
+        <div>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 font-bold">
+                Admin & Middleman Escrow Console
+            </span>
+            <h1 class="text-2xl font-black text-white mt-2">ศูนย์ควบคุมระบบ GameTrade Hub</h1>
+            <p class="text-xs text-slate-400 mt-1">จัดการผู้ใช้, ตรวจสอบสลิปโอนเงิน, และควบคุมการซื้อขายผ่านคนกลาง</p>
+        </div>
+    </div>
+
+    <!-- Stat Metrics (Matching proposal page 5) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
+            <span class="text-xs text-slate-400">Total Users (สมาชิก)</span>
+            <div class="text-2xl font-black text-white mt-1">{{ total_users }}</div>
+            <span class="text-[11px] text-emerald-400 mt-1 block">Live Active</span>
+        </div>
+        <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
+            <span class="text-xs text-slate-400">Total Posts (ไอดีที่ลงขาย)</span>
+            <div class="text-2xl font-black text-cyan-400 mt-1">{{ total_posts }}</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">จากทุกหมวดหมู่เกม</span>
+        </div>
+        <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
+            <span class="text-xs text-slate-400">Pending Orders (รอตรวจสลิป)</span>
+            <div class="text-2xl font-black text-amber-400 mt-1">{{ pending_orders }}</div>
+            <span class="text-[11px] text-amber-400 mt-1 block">ต้องการการยืนยันสลิป</span>
+        </div>
+        <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
+            <span class="text-xs text-slate-400">Escrow Volume (ยอดเงินคนกลาง)</span>
+            <div class="text-2xl font-black text-emerald-400 mt-1">{{ completed_amount|floatformat:0 }} THB</div>
+            <span class="text-[11px] text-emerald-400 mt-1 block">สำเร็จเรียบร้อย</span>
+        </div>
+    </div>
+
+    <!-- Tabs with AlpineJS -->
+    <div class="flex gap-2 border-b border-slate-800 pb-3 text-xs font-bold">
+        <button @click="tab = 'overview'" :class="tab === 'overview' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
+            รายการสั่งซื้อและตรวจสลิป (Orders)
+        </button>
+        <button @click="tab = 'users'" :class="tab === 'users' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
+            จัดการสมาชิกและแบน (Users)
+        </button>
+        <button @click="tab = 'posts'" :class="tab === 'posts' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
+            จัดการโพสต์ขายไอดี (Posts)
+        </button>
+    </div>
+
+    <!-- Orders Tab -->
+    <div x-show="tab === 'overview'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
+        <h2 class="text-sm font-bold text-white">รายการคำสั่งซื้อและตรวจสลิปเงินเข้าคนกลาง</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
+                    <tr>
+                        <th class="p-3">Order ID</th>
+                        <th class="p-3">ผู้ซื้อ</th>
+                        <th class="p-3">โพสต์ไอดีเกม</th>
+                        <th class="p-3">ยอดเงิน</th>
+                        <th class="p-3">สลิปโอนเงิน</th>
+                        <th class="p-3">สถานะ</th>
+                        <th class="p-3 text-right">การจัดการ</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for order in orders_list %}
+                    <tr class="hover:bg-slate-900/50">
+                        <td class="p-3 font-mono text-cyan-400">#{{ order.order_id }}</td>
+                        <td class="p-3 font-bold text-white">{{ order.buyer.username }}</td>
+                        <td class="p-3">{{ order.post.title }}</td>
+                        <td class="p-3 font-bold text-emerald-400">{{ order.amount|floatformat:0 }} THB</td>
+                        <td class="p-3">
+                            {% if order.slip_image %}
+                            <a href="{{ order.slip_image }}" target="_blank" class="text-cyan-400 hover:underline">ดูรูปสลิป</a>
+                            {% else %}
+                            <span class="text-slate-500">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {% if order.status == 'Completed' %}bg-emerald-950 text-emerald-300 border border-emerald-800{% elif order.status == 'Pending' %}bg-amber-950 text-amber-300 border border-amber-800{% else %}bg-rose-950 text-rose-300 border border-rose-800{% endif %}">
+                                {{ order.status }}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right space-x-1">
+                            {% if order.status == 'Pending' %}
+                            <a href="{% url 'admin_verify_order' order.order_id 'approve' %}" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded text-[11px]">
+                                อนุมัติสลิป
+                            </a>
+                            <a href="{% url 'admin_verify_order' order.order_id 'reject' %}" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px]">
+                                ปฏิเสธ
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="p-6 text-center text-slate-500">ยังไม่มีรายการสั่งซื้อ</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Users Tab -->
+    <div x-show="tab === 'users'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
+        <h2 class="text-sm font-bold text-white">รายชื่อสมาชิกและการควบคุมสถานะ (Ban / Active)</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
+                    <tr>
+                        <th class="p-3">User ID</th>
+                        <th class="p-3">ชื่อผู้ใช้</th>
+                        <th class="p-3">อีเมล</th>
+                        <th class="p-3">สิทธิ์</th>
+                        <th class="p-3">สถานะ</th>
+                        <th class="p-3 text-right">ดำเนินการ</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for u in users_list %}
+                    <tr class="hover:bg-slate-900/50">
+                        <td class="p-3 font-mono text-cyan-400">#{{ u.user_id }}</td>
+                        <td class="p-3 font-bold text-white">{{ u.username }}</td>
+                        <td class="p-3 text-slate-400">{{ u.email }}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {% if u.role == 'Admin' %}bg-purple-950 text-purple-300 border border-purple-800{% else %}bg-cyan-950 text-cyan-300 border border-cyan-800{% endif %}">
+                                {{ u.role }}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {% if u.status == 'Active' %}bg-emerald-950 text-emerald-400 border border-emerald-800{% else %}bg-rose-950 text-rose-400 border border-rose-800{% endif %}">
+                                {{ u.status }}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right">
+                            {% if u.user_id != user.user_id %}
+                            <a href="{% url 'admin_toggle_ban' u.user_id %}" class="px-2.5 py-1 rounded text-[11px] font-bold {% if u.status == 'Active' %}bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800{% else %}bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800{% endif %}">
+                                {% if u.status == 'Active' %}ระงับ (Ban){% else %}ปลดแบน (Active){% endif %}
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Posts Tab -->
+    <div x-show="tab === 'posts'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
+        <h2 class="text-sm font-bold text-white">รายการไอดีเกมทั้งหมดในระบบ</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
+                    <tr>
+                        <th class="p-3">ID</th>
+                        <th class="p-3">ชื่อโพสต์</th>
+                        <th class="p-3">หมวดหมู่</th>
+                        <th class="p-3">ราคา</th>
+                        <th class="p-3">ผู้ลงขาย</th>
+                        <th class="p-3">สถานะ</th>
+                        <th class="p-3 text-right">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for p in posts_list %}
+                    <tr class="hover:bg-slate-900/50">
+                        <td class="p-3 font-mono text-cyan-400">#{{ p.post_id }}</td>
+                        <td class="p-3 font-bold text-white">{{ p.title }}</td>
+                        <td class="p-3">{{ p.category.name }}</td>
+                        <td class="p-3 font-bold text-cyan-400">{{ p.price|floatformat:0 }} THB</td>
+                        <td class="p-3">{{ p.seller.username }}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {% if p.status == 'Available' %}bg-emerald-950 text-emerald-300 border border-emerald-800{% elif p.status == 'Pending' %}bg-amber-950 text-amber-300 border border-amber-800{% else %}bg-rose-950 text-rose-300 border border-rose-800{% endif %}">
+                                {{ p.status }}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right">
+                            <a href="{% url 'delete_post' p.post_id %}" onclick="return confirm('ยืนยันลบโพสต์นี้?')" class="px-2.5 py-1 bg-rose-950 text-rose-300 hover:bg-rose-900 rounded text-[11px] border border-rose-800">
+                                ลบโพสต์
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

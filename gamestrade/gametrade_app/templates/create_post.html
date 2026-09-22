@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}ลงขายไอดีเกมใหม่ - GameTrade Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-[#0f172a] rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6">
+        <div>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-bold">
+                Tailwind CSS Form (Requirement 2.2.1: 7 Components)
+            </span>
+            <h1 class="text-2xl font-black text-white mt-2">
+                {% if is_edit %}แก้ไขข้อมูลไอดีเกม{% else %}ลงขายไอดีเกมใหม่ (Create Listing){% endif %}
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                กรอกข้อมูลไอดีเกมและสเปกให้ครบถ้วน ข้อมูลบัญชีจะถูกส่งมอบผ่านแอดมินคนกลางอย่างปลอดภัย
+            </p>
+        </div>
+
+        <form method="POST" class="space-y-5" x-data="{
+            previewImage: '{{ form.image.value|default:"" }}',
+            status: '{{ form.status.value|default:"Available" }}'
+        }">
+            {% csrf_token %}
+
+            <!-- Component 1: TextField - Title -->
+            <div>
+                <label class="text-xs font-bold text-slate-300 block mb-1">หัวข้อประกาศ (Title) *</label>
+                {{ form.title }}
+            </div>
+
+            <!-- Component 2: DropdownList - Category -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-300 block mb-1">หมวดหมู่เกม (Game Category) *</label>
+                    {{ form.category }}
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-300 block mb-1">ราคาขาย (THB) *</label>
+                    {{ form.price }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-300 block mb-1">เซิร์ฟเวอร์ (Server)</label>
+                    {{ form.server }}
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-300 block mb-1">ระดับแรงค์ (Rank)</label>
+                    {{ form.rank }}
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-300 block mb-1">จำนวนสกิน (Skins Count)</label>
+                    {{ form.skins_count }}
+                </div>
+            </div>
+
+            <!-- Component 3: TextArea - Description -->
+            <div>
+                <label class="text-xs font-bold text-slate-300 block mb-1">รายละเอียดไอดีเกม (Description) *</label>
+                {{ form.description }}
+            </div>
+
+            <!-- Component 4: RadioButton - Status -->
+            <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800">
+                <label class="text-xs font-bold text-slate-300 block mb-2">สถานะการขาย (Status)</label>
+                <div class="flex items-center gap-6">
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="radio" name="status" value="Available" x-model="status" class="text-cyan-400">
+                        <span>พร้อมขาย (Available)</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="radio" name="status" value="Pending" x-model="status" class="text-cyan-400">
+                        <span>กำลังดำเนินการ (Pending)</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="radio" name="status" value="Sold" x-model="status" class="text-cyan-400">
+                        <span>ขายแล้ว (Sold)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Component 5: CheckBox -->
+            <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
+                <label class="text-xs font-bold text-slate-300 block">การรับประกันและตัวเลือกพิเศษ</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        {{ form.original_email }}
+                        <span>อีเมลแท้ พร้อมเปลี่ยนมือ</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        {{ form.battle_pass }}
+                        <span>มี Battle Pass ฤดูกาลปัจจุบัน</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        {{ form.secondary_verification }}
+                        <span>ยินยอมส่งบัตร ปชช. ให้คนกลาง</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Component 6: DatetimePicker -->
+            <div>
+                <label class="text-xs font-bold text-slate-300 block mb-1">เวลาที่พร้อมนัดส่งมอบไอดี (Scheduled Delivery)</label>
+                {{ form.scheduled_delivery }}
+            </div>
+
+            <!-- Component 7: FileBrowse / Image URL -->
+            <div>
+                <label class="text-xs font-bold text-slate-300 block mb-1">ลิงก์รูปภาพตัวอย่างไอดี (Image URL)</label>
+                {{ form.image }}
+            </div>
+
+            <div>
+                <label class="text-xs font-bold text-slate-300 block mb-1">ข้อมูลบัญชีเกมสำหรับส่งให้คนกลาง (Credentials)</label>
+                {{ form.game_credentials_note }}
+                <p class="text-[10px] text-slate-500 mt-1">* ข้อมูลนี้จะเห็นได้เฉพาะแอดมินคนกลางเมื่อมีการชำระเงินเข้ามาแล้วเท่านั้น</p>
+            </div>
+
+            <div class="pt-4 flex gap-3">
+                <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-cyan-500/20 hover:brightness-110">
+                    {% if is_edit %}บันทึกการแก้ไข{% else %}ยืนยันการลงขายไอดี{% endif %}
+                </button>
+                <a href="{% url 'index' %}" class="px-5 py-2.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs">
+                    ยกเลิก
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

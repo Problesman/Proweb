@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - GameTrade Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <a href="{% url 'index' %}" class="text-xs text-cyan-400 font-bold">← กลับสู่ Marketplace</a>
+
+    <div class="bg-[#0f172a] rounded-3xl border border-cyan-800/40 p-6 shadow-2xl space-y-4">
+        <div class="relative aspect-video rounded-2xl overflow-hidden bg-slate-950">
+            <img src="{{ post.image }}" alt="{{ post.title }}" class="w-full h-full object-cover">
+        </div>
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">{{ post.category.name }}</span>
+                <h1 class="text-2xl font-black text-white mt-2">{{ post.title }}</h1>
+                <p class="text-xs text-slate-400 mt-1">ผู้ขาย: {{ post.seller.username }} • {{ post.created_at|date:"d/m/Y" }}</p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-black text-cyan-400">{{ post.price|floatformat:0 }} THB</div>
+                <span class="text-[10px] px-2 py-0.5 rounded border {% if post.status == 'Available' %}bg-emerald-950 text-emerald-300 border-emerald-800{% else %}bg-amber-950 text-amber-300 border-amber-800{% endif %}">{{ post.status }}</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800"><span class="text-slate-500 block text-[10px]">เซิร์ฟเวอร์</span><span class="font-bold">{{ post.server|default:"-" }}</span></div>
+            <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800"><span class="text-slate-500 block text-[10px]">แรงค์</span><span class="font-bold text-cyan-400">{{ post.rank|default:"-" }}</span></div>
+            <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800"><span class="text-slate-500 block text-[10px]">เมลแท้</span><span class="font-bold text-emerald-400">{% if post.original_email %}มีเมลแท้{% else %}ไม่มี{% endif %}</span></div>
+            <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800"><span class="text-slate-500 block text-[10px]">สกิน</span><span class="font-bold">{{ post.skins_count }} ชิ้น</span></div>
+        </div>
+
+        <p class="text-sm text-slate-300 leading-relaxed p-4 bg-slate-900/60 rounded-xl border border-slate-800">{{ post.description }}</p>
+
+        <div class="flex flex-wrap gap-3">
+            {% if post.status == 'Available' %}
+            <a href="{% url 'create_order' post.post_id %}" class="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs">สั่งซื้อผ่านคนกลาง</a>
+            {% endif %}
+            {% if user.is_authenticated %}
+                {% if user == post.seller or user.role == 'Admin' %}
+                <a href="{% url 'update_post' post.post_id %}" class="px-5 py-2.5 bg-slate-800 text-cyan-300 rounded-xl text-xs font-bold">แก้ไข</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    {% if related_posts %}
+    <div>
+        <h2 class="text-sm font-bold text-white mb-3">ไอดีเกมใกล้เคียง</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {% for p in related_posts %}
+            <a href="{% url 'post_detail' p.post_id %}" class="bg-[#0f172a] rounded-xl border border-slate-800 p-3 hover:border-cyan-500/40">
+                <div class="font-bold text-sm text-white">{{ p.title }}</div>
+                <div class="text-xs text-cyan-400">{{ p.price|floatformat:0 }} THB</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

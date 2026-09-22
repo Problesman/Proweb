@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GameTrade Hub - ตลาดซื้อขายไอดีเกมและคนกลาง Escrow{% endblock %}</title>
+    
+    <!-- Google Fonts: Kanit and Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (CDN / Play) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Kanit', 'Prompt', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    
+    <!-- AlpineJS for Frontend Interactivity (Requirement: JS & AlpineJS) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+      body {
+        font-family: 'Kanit', sans-serif;
+        background-color: #0b0f17;
+        color: #f1f5f9;
+      }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#0b0f17] text-slate-100" x-data="{ mobileMenu: false }">
+
+    <!-- Top Navigation Bar -->
+    <nav class="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur-md border-b border-cyan-950/60 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Logo & Project Identity -->
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'index' %}" class="flex items-center gap-2.5 group">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 p-0.5 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform flex items-center justify-center">
+                            <span class="text-xl">🎮</span>
+                        </div>
+                        <div>
+                            <span class="text-lg font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">
+                                GAMETRADE HUB
+                            </span>
+                            <span class="block text-[10px] text-cyan-400/80 font-medium">Django + Tailwind + AlpineJS</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center gap-4 text-xs font-semibold">
+                    <a href="{% url 'index' %}" class="px-3 py-1.5 rounded-lg text-cyan-400 bg-cyan-950/40 border border-cyan-800/50">หน้าแรก</a>
+                    <a href="{% url 'create_post' %}" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">+ ลงขายไอดี</a>
+                    {% if user.is_authenticated and user.role == 'Admin' %}
+                    <a href="{% url 'admin_dashboard' %}" class="px-3 py-1.5 rounded-lg text-purple-300 bg-purple-950/40 border border-purple-800/50">Admin Console</a>
+                    {% endif %}
+                </div>
+
+                <!-- User Profile / Auth -->
+                <div class="flex items-center gap-3">
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center gap-2">
+                            <img src="{{ user.avatar }}" class="w-8 h-8 rounded-full border border-cyan-500/60" alt="{{ user.username }}">
+                            <div class="text-left hidden sm:block">
+                                <div class="text-xs font-bold text-white">{{ user.username }}</div>
+                                <span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">{{ user.role }}</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'logout' %}" class="px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white">ออกจากระบบ</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="px-3 py-1.5 text-xs font-bold bg-cyan-500 text-slate-950 rounded-lg">เข้าสู่ระบบ</a>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1">
+        {% if messages %}
+            <div class="max-w-7xl mx-auto px-4 mt-4">
+                {% for message in messages %}
+                    <div class="p-3 mb-2 rounded-xl text-xs font-medium border {% if message.tags == 'error' %}bg-rose-950/70 border-rose-800 text-rose-300{% else %}bg-emerald-950/70 border-emerald-800 text-emerald-300{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-900 bg-[#070b12] py-6 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div><strong>GameTrade Hub</strong> • โครงงานระบบซื้อขายไอดีเกม (Django + Tailwind + AlpineJS)</div>
+            <div>ผู้วิจัย/จัดทำ: <strong>นายณัฐชนน สิงห์ศรี</strong> รหัสนักศึกษา <strong>68114640228</strong></div>
+        </div>
+    </footer>
+
+</body>
+</html>

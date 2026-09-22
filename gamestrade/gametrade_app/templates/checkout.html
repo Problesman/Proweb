@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}แนบสลิปคนกลาง - GameTrade Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 py-8">
+    <div class="bg-[#0f172a] rounded-3xl border border-cyan-800/40 p-6 shadow-2xl space-y-4">
+        <h1 class="text-lg font-black text-white">แนบสลิปโอนเงินเข้าคนกลาง</h1>
+        <p class="text-xs text-slate-400">ชำระ {{ post.price|floatformat:0 }} THB สำหรับไอดี: {{ post.title }}</p>
+
+        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-400">บัญชีคนกลาง</span><span class="text-cyan-400 font-bold">ธนาคารกสิกรไทย 098-X-XXXXX-X</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">ชื่อบัญชี</span><span>GameTrade Escrow Account</span></div>
+        </div>
+
+        <form method="POST" class="space-y-3">
+            {% csrf_token %}
+            {% for field in form %}
+                <div>
+                    <label class="text-xs font-bold text-slate-300 block mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<p class="text-[11px] text-rose-400 mt-1">{{ field.errors|striptags }}</p>{% endif %}
+                </div>
+            {% endfor %}
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs">ยืนยันสลิปและเปิดห้องแชท</button>
+                <a href="{% url 'post_detail' post.post_id %}" class="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">ยกเลิก</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

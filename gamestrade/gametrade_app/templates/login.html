@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'register' %}สมัครสมาชิก{% else %}เข้าสู่ระบบ{% endif %} - GameTrade Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-12">
+    <div class="bg-[#0f172a] rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-5">
+        <div>
+            <h1 class="text-xl font-black text-white">
+                {% if mode == 'register' %}สมัครสมาชิก GameTrade Hub{% else %}เข้าสู่ระบบ{% endif %}
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">ใช้บัญชีสมาชิกเพื่อลงขายไอดี ซื้อผ่านคนกลาง และแชท Escrow</p>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="p-3 rounded-xl text-xs bg-rose-950/70 border border-rose-800 text-rose-300">{{ form.non_field_errors }}</div>
+            {% endif %}
+            {% for field in form %}
+                <div>
+                    <label class="text-xs font-bold text-slate-300 block mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <p class="text-[11px] text-rose-400 mt-1">{{ field.errors|striptags }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs">
+                {% if mode == 'register' %}สมัครสมาชิก{% else %}เข้าสู่ระบบ{% endif %}
+            </button>
+        </form>
+
+        <p class="text-xs text-slate-400 text-center">
+            {% if mode == 'register' %}
+                มีบัญชีแล้ว? <a href="{% url 'login' %}" class="text-cyan-400 font-bold">เข้าสู่ระบบ</a>
+            {% else %}
+                ยังไม่มีบัญชี? <a href="{% url 'register' %}" class="text-cyan-400 font-bold">สมัครสมาชิก</a>
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}

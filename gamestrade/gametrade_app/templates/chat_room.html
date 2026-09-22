@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}ห้องแชทคนกลาง Escrow - GameTrade Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8"
+     x-data="{
+         messages: [
+             {% for m in chat_messages %}
+             {
+                 id: {{ m.message_id }},
+                 sender_id: {{ m.sender.user_id }},
+                 sender_name: '{{ m.sender.username }}',
+                 sender_role: '{{ m.sender.role }}',
+                 text: '{{ m.text_content|escapejs }}',
+                 image: '{{ m.image_url|default:"" }}',
+                 time: '{{ m.timestamp|date:"H:i" }}',
+                 is_system: {% if m.is_system %}true{% else %}false{% endif %}
+             },
+             {% endfor %}
+         ],
+         newText: '',
+         newImage: '',
+         currentUserId: {{ user.user_id }},
+         socket: null,
+         init() {
+             // Django Channels WebSocket connection
+             const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+             this.socket = new WebSocket(wsScheme + '://' + window.location.host + '/ws/chat/{{ room.room_id }}/');
+             this.socket.onmessage = (e) => {
+                 const data = JSON.parse(e.data);
+                 this.messages.push({
+                     sender_id: data.sender_id,
+                     sender_name: data.sender_name,
+                     sender_role: data.sender_role,
+                     text: data.message,
+                     image: data.image_url,
+                     time: data.timestamp
+                 });
+                 this.$nextTick(() => {
+                     const box = document.getElementById('chat-scroll-box');
+                     if (box) box.scrollTop = box.scrollHeight;
+                 });
+             };
+         },
+         sendMsg() {
+             if (!this.newText.trim() && !this.newImage.trim()) return;
+             if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                 this.socket.send(JSON.stringify({
+                     message: this.newText,
+                     image_url: this.newImage,
+                     sender_id: this.currentUserId
+                 }));
+             } else {
+                 // Fallback local update
+                 this.messages.push({
+                     sender_id: this.currentUserId,
+                     sender_name: '{{ user.username }}',
+                     sender_role: '{{ user.role }}',
+                     text: this.newText,
+                     image: this.newImage,
+                     time: new Date().toLocaleTimeString().substring(0, 5)
+                 });
+             }
+             this.newText = '';
+             this.newImage = '';
+         }
+     }">
+
+    <!-- Escrow Header Card -->
+    <div class="bg-[#0f172a] rounded-2xl border border-cyan-800/50 p-5 shadow-xl mb-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">
+                    🛡️ ห้องแชทคนกลาง Escrow ID: #{{ room.room_id }}
+                </span>
+                <span class="text-xs text-slate-400">{{ room.title }}</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+                การซื้อขายทุกขั้นตอนมี Admin คนกลางควบคุม เพื่อความปลอดภัยของทั้งผู้ซื้อและผู้ขาย
+            </p>
+        </div>
+
+        {% if order %}
+        <div class="text-right">
+            <span class="text-xs text-slate-400 block">ยอดเงินที่คนกลางดูแล</span>
+            <span class="text-base font-bold text-emerald-400">{{ order.amount|floatformat:0 }} THB</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Chat Messages Window -->
+    <div class="bg-[#0c121e] rounded-2xl border border-slate-800 p-4 shadow-2xl flex flex-col h-[520px]">
+        <!-- Scrollable Messages -->
+        <div id="chat-scroll-box" class="flex-1 overflow-y-auto space-y-3 pr-2">
+            <template x-for="msg in messages" :key="msg.id || Math.random()">
+                <div :class="msg.sender_id === currentUserId ? 'flex flex-col items-end' : 'flex flex-col items-start'">
+                    <div class="flex items-center gap-1.5 mb-0.5 text-[11px] text-slate-400">
+                        <span x-text="msg.sender_name" class="font-bold text-slate-300"></span>
+                        <span x-text="msg.sender_role" :class="msg.sender_role === 'Admin' ? 'text-purple-400 font-bold' : 'text-cyan-400'"></span>
+                        <span x-text="msg.time" class="text-[10px] text-slate-500"></span>
+                    </div>
+
+                    <div :class="msg.sender_id === currentUserId ? 'bg-cyan-600 text-slate-950 font-medium rounded-2xl rounded-tr-none px-4 py-2.5 max-w-[85%]' : 'bg-slate-800 text-slate-100 rounded-2xl rounded-tl-none px-4 py-2.5 max-w-[85%] border border-slate-700'">
+                        <p x-text="msg.text" class="text-xs whitespace-pre-wrap leading-relaxed"></p>
+                        
+                        <template x-if="msg.image">
+                            <img :src="msg.image" class="mt-2 rounded-lg max-h-48 border border-slate-700 object-cover cursor-pointer" alt="สลิปหรือหลักฐาน">
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Chat Input with Tailwind CSS & AlpineJS -->
+        <div class="mt-4 pt-3 border-t border-slate-800 space-y-2">
+            <div class="flex gap-2">
+                <input 
+                    type="text" 
+                    x-model="newText" 
+                    @keydown.enter="sendMsg()"
+                    placeholder="พิมพ์ข้อความคุยกับคนกลางและคู่ค้า..."
+                    class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                />
+                <button 
+                    @click="sendMsg()"
+                    class="px-5 py-2 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-cyan-500/20 hover:brightness-110">
+                    ส่งข้อความ
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <input 
+                    type="url" 
+                    x-model="newImage" 
+                    placeholder="แนบ URL สลิปหรือรูปหลักฐาน (ไม่บังคับ)..."
+                    class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-[11px] text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+                />
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

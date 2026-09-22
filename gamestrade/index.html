@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameTrade Hub - ตลาดซื้อขายไอดีเกมและคนกลาง Escrow</title>
+    <meta name="description" content="เว็บแอปพลิเคชันศูนย์กลางการซื้อขายไอดีเกม พัฒนาด้วย Django Python, Tailwind CSS, JS & AlpineJS พร้อมระบบคนกลาง (Middleman Admin), แชทเรียลไทม์ และระบบตรวจสอบสลิป" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="min-h-screen flex flex-col bg-[#0b0f17] text-slate-100 selection:bg-cyan-500 selection:text-black font-sans" x-data="gameTradeApp()" x-cloak>
+
+    <!-- Toast Notification -->
+    <div 
+      x-show="notification" 
+      x-transition 
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-cyan-500/50 text-cyan-200 px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md text-xs font-semibold flex items-center gap-2"
+    >
+      <span class="text-emerald-400">✓</span>
+      <span x-text="notification"></span>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur-md border-b border-cyan-950/60 shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          
+          <!-- Logo & Proposal Identity -->
+          <div class="flex items-center gap-3">
+            <button @click="currentView = 'marketplace'" class="flex items-center gap-2.5 group text-left">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 p-0.5 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform flex items-center justify-center">
+                <span class="text-xl">🎮</span>
+              </div>
+              <div>
+                <span class="text-lg font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">
+                  GAMETRADE HUB
+                </span>
+                <span class="block text-[10px] text-cyan-400/80 font-medium">Django Python • Tailwind • AlpineJS</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Main Nav Links -->
+          <div class="hidden md:flex items-center gap-2 text-xs font-bold">
+            <button 
+              @click="currentView = 'marketplace'" 
+              :class="currentView === 'marketplace' ? 'bg-cyan-950/60 text-cyan-300 border-cyan-700/60' : 'text-slate-300 hover:text-white hover:bg-slate-800 border-transparent'"
+              class="px-3 py-1.5 rounded-xl border transition-all"
+            >
+              หน้าแรก (Marketplace)
+            </button>
+
+            <button 
+              @click="openCreatePost()" 
+              class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 text-cyan-300 border border-cyan-600/40 hover:brightness-125 transition-all flex items-center gap-1"
+            >
+              <span>+ ลงขายไอดี</span>
+            </button>
+
+            <button 
+              @click="currentView = 'my-profile'" 
+              :class="currentView === 'my-profile' ? 'bg-cyan-950/60 text-cyan-300 border-cyan-700/60' : 'text-slate-300 hover:text-white hover:bg-slate-800 border-transparent'"
+              class="px-3 py-1.5 rounded-xl border transition-all"
+            >
+              โปรไฟล์ & ประวัติ
+            </button>
+
+            <!-- Admin Console (Visible to Admin role) -->
+            <button 
+              x-show="currentUser.role === 'Admin'"
+              @click="currentView = 'admin-dashboard'" 
+              :class="currentView === 'admin-dashboard' ? 'bg-purple-950/80 text-purple-300 border-purple-600' : 'text-purple-400 hover:bg-purple-950/40 border-purple-900/50'"
+              class="px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1"
+            >
+              <span>🛡️ Admin Console</span>
+            </button>
+
+            <!-- Django Code & Architecture Explorer -->
+            <button 
+              @click="currentView = 'django-code'" 
+              :class="currentView === 'django-code' ? 'bg-amber-950/80 text-amber-300 border-amber-600' : 'text-amber-400 hover:bg-amber-950/40 border-amber-900/50'"
+              class="px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1"
+            >
+              <span>⚡ DJANGO CODE</span>
+            </button>
+          </div>
+
+          <!-- Role Switcher & User Profile -->
+          <div class="flex items-center gap-3">
+            <!-- Role Switcher Dropdown (Allows testing Member buyer/seller and Admin) -->
+            <div class="hidden sm:flex items-center gap-1.5 bg-slate-900/90 border border-slate-700/80 rounded-xl px-2.5 py-1 text-xs">
+              <span class="text-[10px] text-slate-400">สลับสิทธิ์:</span>
+              <select 
+                :value="currentUser.user_id" 
+                @change="switchUser($event.target.value)" 
+                class="bg-transparent text-cyan-300 font-bold outline-none cursor-pointer text-xs"
+              >
+                <template x-for="u in users" :key="u.user_id">
+                  <option :value="u.user_id" class="bg-slate-900 text-white" x-text="`${u.username} (${u.role})`"></option>
+                </template>
+              </select>
+            </div>
+
+            <!-- Current User Badge -->
+            <div class="flex items-center gap-2">
+              <img :src="currentUser.avatar" class="w-8 h-8 rounded-full border border-cyan-400/60 object-cover shadow" alt="Avatar">
+              <div class="hidden lg:block text-left">
+                <div class="text-xs font-bold text-white" x-text="currentUser.username"></div>
+                <span 
+                  x-text="currentUser.role" 
+                  :class="currentUser.role === 'Admin' ? 'bg-purple-950 text-purple-300 border-purple-800' : 'bg-cyan-950 text-cyan-300 border-cyan-800'"
+                  class="text-[9px] px-1.5 py-0.2 rounded font-bold border"
+                ></span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN VIEWS -->
+    <main class="flex-1">
+
+      <!-- ============================================================ -->
+      <!-- VIEW 1: MARKETPLACE -->
+      <!-- ============================================================ -->
+      <section x-show="currentView === 'marketplace'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        
+        <!-- Hero Escrow Banner -->
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-cyan-950/60 to-slate-900 border border-cyan-800/40 p-6 sm:p-8 shadow-2xl">
+          <div class="relative z-10 max-w-3xl">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 mb-3">
+              🛡️ ระบบคนกลางปลอดภัย 100% (Escrow Middleman System)
+            </span>
+            <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+              ศูนย์กลางซื้อขายไอดีเกมออนไลน์ <br>
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-300">
+                ปลอดภัย ตรวจสอบสลิป มีคนกลางดูแลทุกขั้นตอน
+              </span>
+            </h1>
+            <p class="mt-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              โครงงานวิชาโดย <strong>นายณัฐชนน สิงห์ศรี</strong> (68114640228) • Base: <strong>Django Python</strong> | Frontend: <strong>Tailwind CSS, JS & AlpineJS</strong>
+            </p>
+          </div>
+        </div>
+
+        <!-- Search & Filter Bar (Tailwind CSS + AlpineJS) -->
+        <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-4 shadow-xl space-y-4">
+          <div class="flex flex-col md:flex-row gap-3">
+            <div class="flex-1 relative">
+              <input 
+                type="text" 
+                x-model="searchQuery" 
+                placeholder="ค้นหาชื่อไอดีเกม, สกิน, แรงค์, หรือผู้ขาย..."
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+              />
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <select x-model="selectedCategory" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-400">
+                <option value="all">ทุกเกม (All Categories)</option>
+                <template x-for="cat in categories" :key="cat.category_id">
+                  <option :value="cat.category_id" x-text="cat.name"></option>
+                </template>
+              </select>
+
+              <select x-model="selectedStatus" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-400">
+                <option value="all">ทุกสถานะ</option>
+                <option value="Available">พร้อมขาย (Available)</option>
+                <option value="Pending">กำลังซื้อขาย (Pending)</option>
+                <option value="Sold">ขายแล้ว (Sold)</option>
+              </select>
+
+              <select x-model="sortBy" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-400">
+                <option value="latest">ลงขายล่าสุด</option>
+                <option value="price_asc">ราคา: ต่ำ ➔ สูง</option>
+                <option value="price_desc">ราคา: สูง ➔ ต่ำ</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Category Chips -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <button 
+              @click="selectedCategory = 'all'" 
+              :class="selectedCategory === 'all' ? 'border-cyan-500 bg-cyan-950/60 text-cyan-300 font-bold' : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'"
+              class="px-3 py-1.5 rounded-lg border whitespace-nowrap transition-all"
+            >
+              ทั้งหมด
+            </button>
+            <template x-for="cat in categories" :key="cat.category_id">
+              <button 
+                @click="selectedCategory = cat.category_id" 
+                :class="selectedCategory == cat.category_id ? 'border-cyan-500 bg-cyan-950/60 text-cyan-300 font-bold' : 'border-slate-800 bg-slate-900 text-slate-300 hover:text-white'"
+                class="px-3 py-1.5 rounded-lg border whitespace-nowrap flex items-center gap-1.5 transition-all"
+              >
+                <img :src="cat.logo" class="w-4 h-4 rounded object-cover" alt="">
+                <span x-text="cat.name"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <!-- Product Cards Grid -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>🎮 รายการไอดีเกมพร้อมส่งมอบ</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400" x-text="`${filteredPosts().length} รายการ`"></span>
+            </h2>
+
+            <button @click="openCreatePost()" class="text-xs font-bold text-cyan-400 hover:underline">
+              + ลงขายไอดีของคุณ
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div x-show="filteredPosts().length === 0" class="col-span-full py-16 text-center bg-[#0f172a] rounded-2xl border border-slate-800 p-8 shadow-inner">
+              <div class="text-4xl mb-3">🎮</div>
+              <h3 class="text-base font-bold text-white mb-1">ยังไม่มีรายการไอดีเกมในระบบ</h3>
+              <p class="text-xs text-slate-400 mb-4">กดปุ่ม "+ ลงขายไอดีของคุณ" ด้านบนเพื่อเริ่มต้นลงประกาศไอดีเกม</p>
+              <button @click="openCreatePost()" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs hover:brightness-110 shadow-md">
+                + ลงขายไอดีเกมแรก
+              </button>
+            </div>
+            <template x-for="post in filteredPosts()" :key="post.post_id">
+              <div class="group bg-[#0f172a] rounded-2xl border border-slate-800/80 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden flex flex-col shadow-lg">
+                <!-- Cover Image -->
+                <div class="relative aspect-video overflow-hidden bg-slate-950">
+                  <img :src="post.image" :alt="post.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                  <div class="absolute top-2.5 left-2.5">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900/90 text-cyan-300 border border-cyan-500/30 backdrop-blur-md" x-text="getCategory(post.category_id).name"></span>
+                  </div>
+                  <div class="absolute top-2.5 right-2.5">
+                    <span 
+                      x-text="post.status"
+                      :class="post.status === 'Available' ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/30' : post.status === 'Pending' ? 'bg-amber-950/90 text-amber-300 border-amber-500/30' : 'bg-rose-950/90 text-rose-300 border-rose-500/30'"
+                      class="px-2 py-0.5 rounded-md text-[10px] font-bold border backdrop-blur-md"
+                    ></span>
+                  </div>
+                </div>
+
+                <!-- Body -->
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 class="font-bold text-sm text-white line-clamp-1 group-hover:text-cyan-400 transition-colors" x-text="post.title"></h3>
+                    <p class="text-xs text-slate-400 line-clamp-2 mt-1.5" x-text="post.description"></p>
+
+                    <div class="flex flex-wrap gap-1.5 mt-3">
+                      <template x-if="post.server">
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800" x-text="post.server"></span>
+                      </template>
+                      <template x-if="post.rank">
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-cyan-400 border border-cyan-900/50 font-medium" x-text="post.rank"></span>
+                      </template>
+                      <template x-if="post.original_email">
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900/40">เมลแท้</span>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- Price & Action -->
+                  <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                    <div>
+                      <span class="text-[10px] text-slate-400 block">ราคา</span>
+                      <span class="text-base font-black text-cyan-400">
+                        <span x-text="Number(post.price).toLocaleString()"></span> 
+                        <span class="text-[11px] font-normal text-slate-400">THB</span>
+                      </span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                      <button 
+                        @click="selectedPost = post"
+                        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all"
+                      >
+                        ดูข้อมูล
+                      </button>
+
+                      <template x-if="post.status === 'Available'">
+                        <button 
+                          @click="openOrderModal(post)"
+                          class="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-teal-400 hover:brightness-110 text-slate-950 text-xs font-bold rounded-xl shadow-md transition-all"
+                        >
+                          ซื้อผ่านคนกลาง
+                        </button>
+                      </template>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- VIEW 2: ADMIN DASHBOARD (Matching proposal page 5) -->
+      <!-- ============================================================ -->
+      <section x-show="currentView === 'admin-dashboard'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        
+        <div class="bg-[#0f172a] rounded-3xl border border-purple-900/40 p-6 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 font-bold">
+              Admin & Middleman Escrow Console
+            </span>
+            <h1 class="text-2xl font-black text-white mt-2">ศูนย์ควบคุมระบบ GameTrade Hub</h1>
+            <p class="text-xs text-slate-400 mt-1">จัดการคำสั่งซื้อ ตรวจสอบสลิป ควบคุมสถานะสมาชิก และดูรายงานสถิติ</p>
+          </div>
+          <button @click="currentView = 'marketplace'" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold">
+            ← กลับสู่ Marketplace
+          </button>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
+            <span class="text-xs text-slate-400">Total Users (สมาชิก)</span>
+            <div class="text-2xl font-black text-white mt-1" x-text="users.length"></div>
+            <span class="text-[11px] text-emerald-400 mt-1 block">Live 1 Online</span>
+          </div>
+
+          <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
+            <span class="text-xs text-slate-400">Total Posts (ไอดีในระบบ)</span>
+            <div class="text-2xl font-black text-cyan-400 mt-1" x-text="posts.length"></div>
+            <span class="text-[11px] text-slate-400 mt-1 block">จำแนกตามเกม</span>
+          </div>
+
+          <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
+            <span class="text-xs text-slate-400">Pending Orders (รอตรวจสลิป)</span>
+            <div class="text-2xl font-black text-amber-400 mt-1" x-text="orders.filter(o => o.status === 'Pending').length"></div>
+            <span class="text-[11px] text-amber-400 mt-1 block">ต้องการการยืนยัน</span>
+          </div>
+
+          <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
+            <span class="text-xs text-slate-400">Escrow Volume (ยอดหมุนเวียนคนกลาง)</span>
+            <div class="text-2xl font-black text-emerald-400 mt-1" x-text="`${orders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + Number(o.amount), 0).toLocaleString()} THB`"></div>
+            <span class="text-[11px] text-emerald-400 mt-1 block">ปลอดภัย 100%</span>
+          </div>
+        </div>
+
+        <!-- Admin Tabs -->
+        <div class="flex gap-2 border-b border-slate-800 pb-3 text-xs font-bold">
+          <button 
+            @click="adminTab = 'orders'" 
+            :class="adminTab === 'orders' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'"
+          >
+            รายการสั่งซื้อและตรวจสลิป (Orders)
+          </button>
+          <button 
+            @click="adminTab = 'users'" 
+            :class="adminTab === 'users' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'"
+          >
+            จัดการสมาชิกและแบน (Users)
+          </button>
+          <button 
+            @click="adminTab = 'posts'" 
+            :class="adminTab === 'posts' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'"
+          >
+            จัดการโพสต์ขายไอดี (Posts)
+          </button>
+        </div>
+
+        <!-- Orders & Slip Verification Table -->
+        <div x-show="adminTab === 'orders'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
+          <h2 class="text-sm font-bold text-white">รายการคำสั่งซื้อและตรวจสลิปเงินเข้าคนกลาง</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="p-3">Order ID</th>
+                  <th class="p-3">ผู้ซื้อ</th>
+                  <th class="p-3">ยอดเงิน</th>
+                  <th class="p-3">สลิปโอนเงิน</th>
+                  <th class="p-3">สถานะ</th>
+                  <th class="p-3 text-right">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                <tr x-show="orders.length === 0">
+                  <td colspan="6" class="p-8 text-center text-slate-500 text-xs">
+                    ยังไม่มีรายการคำสั่งซื้อในระบบ
+                  </td>
+                </tr>
+                <template x-for="order in orders" :key="order.order_id">
+                  <tr class="hover:bg-slate-900/50">
+                    <td class="p-3 font-mono text-cyan-400" x-text="`#${order.order_id}`"></td>
+                    <td class="p-3 font-bold text-white" x-text="getSeller(order.buyer_id).username"></td>
+                    <td class="p-3 font-bold text-emerald-400" x-text="`${Number(order.amount).toLocaleString()} THB`"></td>
+                    <td class="p-3">
+                      <a :href="order.slip_image" target="_blank" class="text-cyan-400 hover:underline flex items-center gap-1">
+                        <span>🔍 ดูสลิป</span>
+                      </a>
+                    </td>
+                    <td class="p-3">
+                      <span 
+                        x-text="order.status"
+                        :class="order.status === 'Completed' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : order.status === 'Pending' ? 'bg-amber-950 text-amber-300 border-amber-800' : 'bg-rose-950 text-rose-300 border-rose-800'"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                      ></span>
+                    </td>
+                    <td class="p-3 text-right space-x-1">
+                      <template x-if="order.status === 'Pending'">
+                        <button 
+                          @click="adminVerifyOrder(order.order_id, 'approve')"
+                          class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded text-[11px]"
+                        >
+                          อนุมัติสลิป
+                        </button>
+                      </template>
+                      <template x-if="order.status === 'Pending'">
+                        <button 
+                          @click="adminVerifyOrder(order.order_id, 'reject')"
+                          class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px]"
+                        >
+                          ปฏิเสธ
+                        </button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div x-show="adminTab === 'users'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
+          <h2 class="text-sm font-bold text-white">รายชื่อสมาชิกและการควบคุมสถานะ (Ban / Active)</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="p-3">ID</th>
+                  <th class="p-3">ชื่อผู้ใช้</th>
+                  <th class="p-3">อีเมล</th>
+                  <th class="p-3">สิทธิ์</th>
+                  <th class="p-3">สถานะ</th>
+                  <th class="p-3 text-right">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                <template x-for="u in users" :key="u.user_id">
+                  <tr class="hover:bg-slate-900/50">
+                    <td class="p-3 font-mono text-cyan-400" x-text="`#${u.user_id}`"></td>
+                    <td class="p-3 font-bold text-white" x-text="u.username"></td>
+                    <td class="p-3 text-slate-400" x-text="u.email"></td>
+                    <td class="p-3">
+                      <span 
+                        x-text="u.role" 
+                        :class="u.role === 'Admin' ? 'bg-purple-950 text-purple-300 border-purple-800' : 'bg-cyan-950 text-cyan-300 border-cyan-800'"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                      ></span>
+                    </td>
+                    <td class="p-3">
+                      <span 
+                        x-text="u.status" 
+                        :class="u.status === 'Active' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-rose-950 text-rose-400 border-rose-800'"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                      ></span>
+                    </td>
+                    <td class="p-3 text-right">
+                      <template x-if="u.user_id !== currentUser.user_id">
+                        <button 
+                          @click="adminToggleBan(u.user_id)"
+                          :class="u.status === 'Active' ? 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border-rose-800' : 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border-emerald-800'"
+                          class="px-2.5 py-1 rounded text-[11px] font-bold border"
+                          x-text="u.status === 'Active' ? 'ระงับ (Ban)' : 'ปลดแบน (Active)'"
+                        ></button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Posts Moderation Table -->
+        <div x-show="adminTab === 'posts'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
+          <h2 class="text-sm font-bold text-white">รายการไอดีเกมทั้งหมดในระบบ</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="p-3">ID</th>
+                  <th class="p-3">ชื่อโพสต์</th>
+                  <th class="p-3">ราคา</th>
+                  <th class="p-3">สถานะ</th>
+                  <th class="p-3 text-right">ดำเนินการ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                <tr x-show="posts.length === 0">
+                  <td colspan="5" class="p-8 text-center text-slate-500 text-xs">
+                    ยังไม่มีโพสต์ไอดีเกมในระบบ
+                  </td>
+                </tr>
+                <template x-for="p in posts" :key="p.post_id">
+                  <tr class="hover:bg-slate-900/50">
+                    <td class="p-3 font-mono text-cyan-400" x-text="`#${p.post_id}`"></td>
+                    <td class="p-3 font-bold text-white" x-text="p.title"></td>
+                    <td class="p-3 font-bold text-cyan-400" x-text="`${Number(p.price).toLocaleString()} THB`"></td>
+                    <td class="p-3">
+                      <span 
+                        x-text="p.status"
+                        :class="p.status === 'Available' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : p.status === 'Pending' ? 'bg-amber-950 text-amber-300 border-amber-800' : 'bg-rose-950 text-rose-300 border-rose-800'"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                      ></span>
+                    </td>
+                    <td class="p-3 text-right">
+                      <button 
+                        @click="deletePost(p.post_id)"
+                        class="px-2.5 py-1 bg-rose-950 text-rose-300 hover:bg-rose-900 rounded text-[11px] border border-rose-800"
+                      >
+                        ลบโพสต์
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- VIEW 3: USER PROFILE & ORDERS -->
+      <!-- ============================================================ -->
+      <section x-show="currentView === 'my-profile'" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        
+        <!-- Profile Header Card -->
+        <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div class="flex items-center gap-4">
+            <img :src="currentUser.avatar" class="w-16 h-16 rounded-2xl object-cover ring-2 ring-cyan-500/50 shadow-lg" alt="Avatar">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-bold text-white" x-text="currentUser.username"></h2>
+                <span 
+                  x-text="currentUser.role"
+                  :class="currentUser.role === 'Admin' ? 'bg-purple-900/60 text-purple-300 border-purple-700' : 'bg-cyan-950 text-cyan-300 border-cyan-800'"
+                  class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                ></span>
+                <span 
+                  x-text="currentUser.status"
+                  :class="currentUser.status === 'Active' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : 'bg-rose-950 text-rose-400 border-rose-800'"
+                  class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                ></span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1" x-text="`${currentUser.email} • เบอร์: ${currentUser.phone || '-'} • สมาชิกตั้งแต่ ${currentUser.created_at}`"></p>
+            </div>
+          </div>
+
+          <button @click="openCreatePost()" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs shadow-md">
+            + ลงขายไอดีใหม่
+          </button>
+        </div>
+
+        <!-- Profile Tabs -->
+        <div class="flex border-b border-slate-800 gap-2">
+          <button 
+            @click="profileTab = 'orders'" 
+            :class="profileTab === 'orders' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400 hover:text-white'"
+            class="pb-3 px-4 text-xs font-bold border-b-2 transition-colors"
+          >
+            ประวัติการสั่งซื้อ (My Orders)
+          </button>
+          <button 
+            @click="profileTab = 'posts'" 
+            :class="profileTab === 'posts' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400 hover:text-white'"
+            class="pb-3 px-4 text-xs font-bold border-b-2 transition-colors"
+          >
+            ประวัติการลงขาย (My Listings)
+          </button>
+        </div>
+
+        <!-- Orders Content -->
+        <div x-show="profileTab === 'orders'" class="bg-[#0f172a] rounded-xl border border-slate-800 p-5 shadow-lg space-y-3">
+          <h3 class="text-sm font-bold text-white mb-2">คำสั่งซื้อของฉัน</h3>
+          <div x-show="orders.filter(o => o.buyer_id === currentUser.user_id).length === 0" class="py-8 text-center text-slate-500 text-xs">
+            ยังไม่มีประวัติการสั่งซื้อไอดีเกม
+          </div>
+          <template x-for="ord in orders.filter(o => o.buyer_id === currentUser.user_id)" :key="ord.order_id">
+            <div class="p-4 bg-slate-900 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span class="font-bold text-sm text-white" x-text="`คำสั่งซื้อ #${ord.order_id}`"></span>
+                <p class="text-xs text-cyan-400 font-bold mt-0.5" x-text="`${Number(ord.amount).toLocaleString()} THB`"></p>
+                <p class="text-[11px] text-slate-400" x-text="`สั่งซื้อเมื่อ: ${ord.order_date}`"></p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span 
+                  x-text="`สถานะ: ${ord.status}`" 
+                  :class="ord.status === 'Completed' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' : ord.status === 'Pending' ? 'bg-amber-950 text-amber-400 border-amber-800' : 'bg-rose-950 text-rose-400 border-rose-800'"
+                  class="px-2.5 py-1 rounded text-xs font-bold border"
+                ></span>
+                <a :href="ord.slip_image" target="_blank" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs border border-slate-700">
+                  ดูสลิป
+                </a>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Listings Content -->
+        <div x-show="profileTab === 'posts'" class="bg-[#0f172a] rounded-xl border border-slate-800 p-5 shadow-lg space-y-3">
+          <h3 class="text-sm font-bold text-white mb-2">ไอดีเกมที่ฉันลงขาย</h3>
+          <div x-show="posts.filter(post => post.seller_id === currentUser.user_id).length === 0" class="py-8 text-center text-slate-500 text-xs">
+            ยังไม่มีประวัติการลงขายไอดีเกม (คลิกปุ่ม "+ ลงขายไอดีใหม่" เพื่อสร้างรายการ)
+          </div>
+          <template x-for="p in posts.filter(post => post.seller_id === currentUser.user_id)" :key="p.post_id">
+            <div class="p-4 bg-slate-900 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <img :src="p.image" class="w-14 h-14 rounded-lg object-cover" alt="">
+                <div>
+                  <h4 class="font-bold text-sm text-white" x-text="p.title"></h4>
+                  <p class="text-xs text-cyan-400 font-bold mt-0.5" x-text="`${Number(p.price).toLocaleString()} THB`"></p>
+                  <p class="text-[11px] text-slate-400" x-text="`ลงขายเมื่อ: ${p.created_at}`"></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button @click="openEditPost(p)" class="px-3 py-1 bg-slate-800 text-cyan-300 rounded text-xs font-bold border border-slate-700">
+                  แก้ไข
+                </button>
+                <button @click="deletePost(p.post_id)" class="px-3 py-1 bg-rose-950/60 text-rose-300 rounded text-xs font-bold border border-rose-800">
+                  ลบ
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- VIEW 4: DJANGO PYTHON CODE ARCHITECTURE EXPLORER -->
+      <!-- ============================================================ -->
+      <section x-show="currentView === 'django-code'" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        
+        <div class="bg-[#0f172a] rounded-2xl border border-amber-900/40 p-6 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/40">
+                ⚡ Python Django + Tailwind + AlpineJS Architecture
+              </span>
+              <span class="text-xs text-slate-400">Class Project Proposal</span>
+            </div>
+            <h2 class="text-xl font-bold text-white mt-1">
+              โครงสร้างซอร์สโค้ดภาษา Django Python และ AlpineJS ในโปรเจกต์
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">
+              ไฟล์ทั้งหมดถูกสร้างและเก็บไว้ใน Root โปรเจกต์ (`gametrade_app/models.py`, `views.py`, `consumers.py`, `forms.py` ฯลฯ)
+            </p>
+          </div>
+
+          <button @click="currentView = 'marketplace'" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold">
+            ← กลับหน้าหลัก
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-3 text-xs font-bold">
+          <button 
+            @click="djangoCodeFile = 'models'" 
+            :class="djangoCodeFile === 'models' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'text-slate-400 hover:bg-slate-800'"
+            class="px-3.5 py-2 rounded-xl border transition-all"
+          >
+            models.py (6 Database Models)
+          </button>
+          <button 
+            @click="djangoCodeFile = 'views'" 
+            :class="djangoCodeFile === 'views' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'text-slate-400 hover:bg-slate-800'"
+            class="px-3.5 py-2 rounded-xl border transition-all"
+          >
+            views.py (Marketplace & Orders)
+          </button>
+          <button 
+            @click="djangoCodeFile = 'forms'" 
+            :class="djangoCodeFile === 'forms' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'text-slate-400 hover:bg-slate-800'"
+            class="px-3.5 py-2 rounded-xl border transition-all"
+          >
+            forms.py (7 Tailwind Components)
+          </button>
+          <button 
+            @click="djangoCodeFile = 'consumers'" 
+            :class="djangoCodeFile === 'consumers' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'text-slate-400 hover:bg-slate-800'"
+            class="px-3.5 py-2 rounded-xl border transition-all"
+          >
+            consumers.py (Channels WebSocket)
+          </button>
+          <button 
+            @click="djangoCodeFile = 'admin'" 
+            :class="djangoCodeFile === 'admin' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'text-slate-400 hover:bg-slate-800'"
+            class="px-3.5 py-2 rounded-xl border transition-all"
+          >
+            admin.py (Dashboard Admin)
+          </button>
+        </div>
+
+        <!-- Code Snippet Container -->
+        <div class="bg-[#090d16] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+          <div class="bg-slate-900/90 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <span class="font-mono text-cyan-400" x-text="`gametrade_app/${djangoCodeFile}.py`"></span>
+            <span>Python 3.10 / Django 5.x</span>
+          </div>
+          <pre class="p-4 sm:p-6 overflow-x-auto text-xs sm:text-sm font-mono text-slate-200 leading-relaxed max-h-[550px]">
+            <template x-if="djangoCodeFile === 'models'">
+              <code># 6 Database Models (models.py)
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class User(AbstractUser):
+    ROLE_CHOICES = (('Member', 'Member'), ('Admin', 'Admin'))
+    STATUS_CHOICES = (('Active', 'Active'), ('Banned', 'Banned'))
+    user_id = models.AutoField(primary_key=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='Member')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
+    avatar = models.URLField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+
+class GameCategory(models.Model):
+    category_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, unique=True)
+    logo = models.URLField()
+
+class GamePost(models.Model):
+    post_id = models.AutoField(primary_key=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.URLField()
+    status = models.CharField(max_length=20, default='Available')
+    server = models.CharField(max_length=100, blank=True)
+    rank = models.CharField(max_length=100, blank=True)
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    category = models.ForeignKey(GameCategory, on_delete=models.CASCADE, related_name='posts')
+
+class Order(models.Model):
+    order_id = models.AutoField(primary_key=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    slip_image = models.URLField()
+    status = models.CharField(max_length=20, default='Pending')
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
+    post = models.ForeignKey(GamePost, on_delete=models.CASCADE, related_name='orders')
+
+class ChatRoom(models.Model):
+    room_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_rooms')
+
+class ChatMessage(models.Model):
+    message_id = models.AutoField(primary_key=True)
+    text_content = models.TextField(blank=True)
+    image_url = models.URLField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')</code>
+            </template>
+            <template x-if="djangoCodeFile === 'views'">
+              <code># Django Views (views.py)
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import GamePost, GameCategory, Order, ChatRoom, ChatMessage
+
+def index(request):
+    categories = GameCategory.objects.all()
+    posts = GamePost.objects.filter(status='Available').order_by('-created_at')
+    return render(request, 'index.html', {'categories': categories, 'posts': posts})
+
+@login_required
+def create_order(request, post_id):
+    post = get_object_or_404(GamePost, post_id=post_id)
+    if request.method == 'POST':
+        order = Order.objects.create(
+            amount=post.price,
+            slip_image=request.POST.get('slip_image'),
+            buyer=request.user,
+            post=post,
+            status='Pending'
+        )
+        post.status = 'Pending'
+        post.save()
+        return redirect('chat_room', room_id=post.post_id)
+    return render(request, 'checkout.html', {'post': post})</code>
+            </template>
+            <template x-if="djangoCodeFile === 'forms'">
+              <code># 7 Form Components (forms.py)
+from django import forms
+from .models import GamePost
+
+class GamePostForm(forms.ModelForm):
+    scheduled_delivery = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl'})
+    )
+    class Meta:
+        model = GamePost
+        fields = ['title', 'category', 'price', 'description', 'status', 'server', 'rank', 'original_email', 'image']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl'}),
+            'category': forms.Select(attrs={'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl'}),
+            'description': forms.Textarea(attrs={'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl'}),
+            'status': forms.RadioSelect(),
+            'original_email': forms.CheckboxInput(),
+            'image': forms.URLInput(attrs={'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl'}),
+        }</code>
+            </template>
+            <template x-if="djangoCodeFile === 'consumers'">
+              <code># Channels WebSocket Consumer (consumers.py)
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+class MiddlemanChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_id = self.scope['url_route']['kwargs']['room_id']
+        self.room_group_name = f'chat_{self.room_id}'
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {'type': 'chat_message', 'message': data.get('message'), 'sender_id': data.get('sender_id')}
+        )
+
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps(event))</code>
+            </template>
+            <template x-if="djangoCodeFile === 'admin'">
+              <code># Django Admin (admin.py)
+from django.contrib import admin
+from .models import User, GameCategory, GamePost, Order, ChatRoom, ChatMessage
+
+@admin.register(User)
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ('user_id', 'username', 'email', 'role', 'status')
+    actions = ['ban_users']
+    def ban_users(self, request, queryset):
+        queryset.update(status='Banned')
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('order_id', 'buyer', 'amount', 'status')
+    actions = ['approve_order']
+    def approve_order(self, request, queryset):
+        queryset.update(status='Completed')</code>
+            </template>
+          </pre>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- MODALS: POST DETAIL, SELL POST, ORDER SLIP, ESCROW CHAT -->
+    <!-- ============================================================ -->
+
+    <!-- Modal 1: Post Detail Modal -->
+    <div x-show="selectedPost && !isOrderModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="selectedPost = null">
+      <div class="relative w-full max-w-2xl bg-[#0f172a] border border-cyan-800/60 rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <button @click="selectedPost = null" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
+
+        <template x-if="selectedPost">
+          <div>
+            <div class="relative aspect-video rounded-2xl overflow-hidden bg-slate-950 mb-4">
+              <img :src="selectedPost.image" :alt="selectedPost.title" class="w-full h-full object-cover">
+              <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur px-3 py-1 rounded-xl text-xs font-bold text-cyan-300 border border-cyan-500/40" x-text="getCategory(selectedPost.category_id).name"></div>
+            </div>
+
+            <h2 class="text-xl font-bold text-white" x-text="selectedPost.title"></h2>
+            
+            <div class="flex items-center justify-between py-2 border-y border-slate-800">
+              <div class="text-xl font-black text-cyan-400">
+                <span x-text="Number(selectedPost.price).toLocaleString()"></span> THB
+              </div>
+              <span 
+                x-text="`สถานะ: ${selectedPost.status}`" 
+                :class="selectedPost.status === 'Available' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-amber-950 text-amber-300 border-amber-800'"
+                class="px-2.5 py-1 rounded-lg text-xs font-bold border"
+              ></span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800">
+                <span class="text-slate-500 block text-[10px]">เซิร์ฟเวอร์</span>
+                <span class="font-bold text-slate-200" x-text="selectedPost.server || '-'"></span>
+              </div>
+              <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800">
+                <span class="text-slate-500 block text-[10px]">ระดับแรงค์</span>
+                <span class="font-bold text-cyan-400" x-text="selectedPost.rank || '-'"></span>
+              </div>
+              <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800">
+                <span class="text-slate-500 block text-[10px]">เมลแท้</span>
+                <span class="font-bold text-emerald-400" x-text="selectedPost.original_email ? 'มีเมลแท้' : 'ไม่มี'"></span>
+              </div>
+              <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-800">
+                <span class="text-slate-500 block text-[10px]">สกินในไอดี</span>
+                <span class="font-bold text-slate-200" x-text="`${selectedPost.skins_count || 0} ชิ้น`"></span>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="text-xs font-bold text-slate-300 mb-1">รายละเอียดจากผู้ขาย</h4>
+              <p class="text-xs text-slate-400 leading-relaxed p-3 bg-slate-900/60 rounded-xl border border-slate-800" x-text="selectedPost.description"></p>
+            </div>
+
+            <div class="pt-2 flex gap-3">
+              <template x-if="selectedPost.status === 'Available'">
+                <button 
+                  @click="openOrderModal(selectedPost)"
+                  class="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-cyan-500/20 hover:brightness-110"
+                >
+                  สั่งซื้อและโอนเงินเข้าคนกลาง
+                </button>
+              </template>
+              <button @click="selectedPost = null" class="px-5 py-3 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">
+                ปิด
+              </button>
+            </div>
+
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Modal 2: Sell Post Form (The 7 Input Components) -->
+    <div x-show="isSellModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="isSellModalOpen = false">
+      <div class="relative w-full max-w-2xl bg-[#0f172a] border border-cyan-800/60 rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <button @click="isSellModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
+
+        <div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-bold">
+            Tailwind CSS Form (Requirement 2.2.1: 7 Components)
+          </span>
+          <h2 class="text-lg font-black text-white mt-1" x-text="isEditing ? 'แก้ไขโพสต์ขายไอดีเกม' : 'ลงขายไอดีเกมใหม่ (Create Listing)'"></h2>
+        </div>
+
+        <form @submit.prevent="submitPost()" class="space-y-4">
+          <!-- 1. TextField: Title -->
+          <div>
+            <label class="text-xs font-bold text-slate-300 block mb-1">หัวข้อประกาศ (Title) *</label>
+            <input type="text" required x-model="postForm.title" placeholder="เช่น [TH] Valorant Radiant Peak สกินแน่น" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+
+          <!-- 2. DropdownList: Category -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-bold text-slate-300 block mb-1">หมวดหมู่เกม (DropdownList) *</label>
+              <select x-model="postForm.category_id" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                <template x-for="cat in categories" :key="cat.category_id">
+                  <option :value="cat.category_id" x-text="cat.name"></option>
+                </template>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-300 block mb-1">ราคาขาย (THB) *</label>
+              <input type="number" required x-model="postForm.price" placeholder="เช่น 3500" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="text-xs font-bold text-slate-300 block mb-1">เซิร์ฟเวอร์</label>
+              <input type="text" x-model="postForm.server" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-300 block mb-1">ระดับแรงค์</label>
+              <input type="text" x-model="postForm.rank" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-300 block mb-1">จำนวนสกิน</label>
+              <input type="number" x-model="postForm.skins_count" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            </div>
+          </div>
+
+          <!-- 3. TextArea: Description -->
+          <div>
+            <label class="text-xs font-bold text-slate-300 block mb-1">รายละเอียดไอดีเกม (TextArea) *</label>
+            <textarea rows="3" required x-model="postForm.description" placeholder="ระบุสกิน ประวัติ และข้อมูลไอดี" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"></textarea>
+          </div>
+
+          <!-- 4. RadioButton: Status -->
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+            <label class="text-xs font-bold text-slate-300 block mb-1.5">สถานะการขาย (RadioButton)</label>
+            <div class="flex gap-4">
+              <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+                <input type="radio" name="status" value="Available" x-model="postForm.status" class="text-cyan-400">
+                <span>Available</span>
+              </label>
+              <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+                <input type="radio" name="status" value="Pending" x-model="postForm.status" class="text-cyan-400">
+                <span>Pending</span>
+              </label>
+              <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+                <input type="radio" name="status" value="Sold" x-model="postForm.status" class="text-cyan-400">
+                <span>Sold</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 5. CheckBox -->
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-wrap gap-4">
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input type="checkbox" x-model="postForm.original_email" class="rounded text-cyan-400">
+              <span>เมลแท้</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input type="checkbox" x-model="postForm.battle_pass" class="rounded text-cyan-400">
+              <span>มี Battle Pass</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <input type="checkbox" x-model="postForm.secondary_verification" class="rounded text-cyan-400">
+              <span>ยินยอมยืนยันบัตรกับคนกลาง</span>
+            </label>
+          </div>
+
+          <!-- 6. DatetimePicker -->
+          <div>
+            <label class="text-xs font-bold text-slate-300 block mb-1">เวลานัดส่งมอบไอดี (DatetimePicker)</label>
+            <input type="datetime-local" x-model="postForm.scheduled_delivery" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+
+          <!-- 7. FileBrowse / Image URL -->
+          <div>
+            <label class="text-xs font-bold text-slate-300 block mb-1">ลิงก์รูปภาพตัวอย่างไอดี (File/Image URL)</label>
+            <input type="url" required x-model="postForm.image" placeholder="https://images.unsplash.com/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+
+          <div class="pt-2 flex gap-3">
+            <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs">
+              ยืนยันการบันทึก
+            </button>
+            <button type="button" @click="isSellModalOpen = false" class="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">
+              ยกเลิก
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal 3: Order & Slip Upload Modal -->
+    <div x-show="isOrderModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="isOrderModalOpen = false">
+      <div class="relative w-full max-w-lg bg-[#0f172a] border border-cyan-800/60 rounded-3xl p-6 shadow-2xl space-y-4">
+        <button @click="isOrderModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
+
+        <div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-bold">
+            ระบบสั่งซื้อผ่านคนกลาง (Escrow Payment)
+          </span>
+          <h2 class="text-lg font-black text-white mt-1">แนบสลิปโอนเงินเข้าคนกลาง</h2>
+          <template x-if="selectedPost">
+            <p class="text-xs text-slate-400" x-text="`ชำระยอด ${Number(selectedPost.price).toLocaleString()} THB สำหรับไอดี: ${selectedPost.title}`"></p>
+          </template>
+        </div>
+
+        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs space-y-1">
+          <div class="flex justify-between">
+            <span class="text-slate-400">บัญชีคนกลาง GameTrade Hub:</span>
+            <span class="font-bold text-cyan-400">ธนาคารกสิกรไทย 098-X-XXXXX-X</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">ชื่อบัญชี:</span>
+            <span class="text-slate-200">GameTrade Escrow Account</span>
+          </div>
+        </div>
+
+        <form @submit.prevent="submitOrder()" class="space-y-3">
+          <div>
+            <label class="text-xs font-bold text-slate-300 block mb-1">ลิงก์รูปภาพสลิปการโอนเงิน (Slip URL) *</label>
+            <input type="url" required x-model="orderForm.slip_url" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+
+          <template x-if="orderForm.slip_url">
+            <div class="p-2 bg-slate-900 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block mb-1">ตัวอย่างสลิป:</span>
+              <img :src="orderForm.slip_url" class="max-h-36 rounded-lg object-contain mx-auto" alt="Slip Preview">
+            </div>
+          </template>
+
+          <div>
+            <label class="text-xs font-bold text-slate-300 block mb-1">หมายเหตุเพิ่มเติมถึงคนกลาง</label>
+            <input type="text" x-model="orderForm.notes" placeholder="เช่น โอนเวลา 14:30 จาก K-Bank" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+
+          <div class="pt-2 flex gap-3">
+            <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs shadow-md">
+              ยืนยันการแนบสลิปและเปิดห้องแชทคนกลาง
+            </button>
+            <button type="button" @click="isOrderModalOpen = false" class="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">
+              ยกเลิก
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Floating Middleman Chat Trigger -->
+    <button 
+      x-show="!isChatOpen"
+      @click="isChatOpen = true" 
+      class="fixed bottom-6 right-6 z-40 px-4 py-3 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:brightness-110 text-slate-950 font-bold text-xs sm:text-sm rounded-2xl shadow-xl shadow-cyan-500/25 flex items-center gap-2 hover:scale-105 transition-all"
+    >
+      <span class="text-base">💬</span>
+      <span>ห้องแชทคนกลาง (Middleman Escrow)</span>
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-950 ring-2 ring-emerald-400 animate-pulse"></span>
+    </button>
+
+    <!-- Floating Chat Window (Real-time Escrow Chat) -->
+    <div 
+      x-show="isChatOpen" 
+      class="fixed bottom-6 right-4 sm:right-6 z-50 w-[95vw] sm:w-[460px] bg-[#0c121e] border border-cyan-800/70 rounded-3xl shadow-2xl flex flex-col h-[580px] overflow-hidden"
+    >
+      <!-- Chat Header -->
+      <div class="bg-[#0f172a] p-3.5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-xs">
+            🛡️
+          </div>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>ห้องแชทคนกลาง Escrow</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">LIVE</span>
+            </div>
+            <p class="text-[10px] text-slate-400">เคสซื้อขายไอดีเกม • มีแอดมินคนกลางดูแล</p>
+          </div>
+        </div>
+
+        <button @click="isChatOpen = false" class="text-slate-400 hover:text-white font-bold p-1">✕</button>
+      </div>
+
+      <!-- Admin Escrow Progress Bar -->
+      <div class="bg-slate-900/90 px-4 py-2 border-b border-slate-800 text-[10px] text-slate-300">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-bold text-cyan-300">ขั้นตอนคนกลาง:</span>
+          <span x-text="`ขั้นตอนที่ ${escrowStep}/4`" class="font-mono text-cyan-400"></span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div class="bg-gradient-to-r from-cyan-400 to-emerald-400 h-1.5 transition-all" :style="`width: ${(escrowStep / 4) * 100}%`"></div>
+        </div>
+      </div>
+
+      <!-- Admin Quick Control Bar (if current user is Admin) -->
+      <template x-if="currentUser.role === 'Admin'">
+        <div class="bg-purple-950/40 p-2 border-b border-purple-900/50 flex items-center justify-between text-[11px]">
+          <span class="text-purple-300 font-bold">แผงควบคุมคนกลาง:</span>
+          <div class="flex gap-1">
+            <button @click="advanceEscrowStep(2)" class="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded text-[10px] hover:bg-purple-800">1. ยืนยันสลิป</button>
+            <button @click="advanceEscrowStep(3)" class="px-2 py-0.5 bg-purple-900/60 text-purple-200 rounded text-[10px] hover:bg-purple-800">2. ตรวจเมล</button>
+            <button @click="advanceEscrowStep(4)" class="px-2 py-0.5 bg-emerald-900/60 text-emerald-200 rounded text-[10px] hover:bg-emerald-800">3. โอนเงินปิดเคส</button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Message History -->
+      <div id="chat-window-scroll" class="flex-1 overflow-y-auto p-4 space-y-3">
+        <div x-show="messages.length === 0" class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
+          <div class="text-3xl mb-2">💬</div>
+          <p class="text-xs font-semibold text-slate-300">ยังไม่มีข้อความในห้องแชท</p>
+          <p class="text-[11px] text-slate-500 mt-1">พิมพ์ข้อความด้านล่างเพื่อเริ่มการติดต่อกับคนกลาง Escrow</p>
+        </div>
+        <template x-for="msg in messages" :key="msg.message_id">
+          <div :class="msg.sender_id === currentUser.user_id ? 'flex flex-col items-end' : 'flex flex-col items-start'">
+            <div class="flex items-center gap-1.5 mb-0.5 text-[10px] text-slate-400">
+              <span x-text="msg.sender_name" class="font-bold text-slate-300"></span>
+              <span 
+                x-text="msg.sender_role" 
+                :class="msg.sender_role === 'Admin' ? 'text-purple-400 font-bold' : 'text-cyan-400'"
+              ></span>
+              <span x-text="msg.timestamp" class="text-slate-500"></span>
+            </div>
+
+            <div 
+              :class="msg.sender_id === currentUser.user_id ? 'bg-cyan-600 text-slate-950 font-medium rounded-2xl rounded-tr-none px-3.5 py-2 max-w-[85%]' : msg.is_system ? 'bg-purple-950/80 text-purple-200 border border-purple-800 rounded-2xl px-3.5 py-2 max-w-[90%]' : 'bg-slate-800 text-slate-100 rounded-2xl rounded-tl-none px-3.5 py-2 max-w-[85%] border border-slate-700'"
+            >
+              <p x-text="msg.text_content" class="text-xs whitespace-pre-wrap leading-relaxed"></p>
+              <template x-if="msg.image_url">
+                <img :src="msg.image_url" class="mt-2 rounded-lg max-h-36 border border-slate-700 object-cover" alt="Attachment">
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Chat Input -->
+      <div class="p-3 bg-[#0f172a] border-t border-slate-800 space-y-2">
+        <form @submit.prevent="sendChat()" class="flex gap-2">
+          <input 
+            type="text" 
+            x-model="newChatMessage" 
+            placeholder="พิมพ์ข้อความคุยกับคนกลาง..." 
+            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+          >
+          <button type="submit" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold text-xs rounded-xl">
+            ส่ง
+          </button>
+        </form>
+        <div class="flex items-center gap-1.5">
+          <input 
+            type="url" 
+            x-model="newChatImage" 
+            placeholder="แนบลิงก์รูปสลิป / ข้อมูล (ไม่บังคับ)..." 
+            class="flex-1 bg-slate-900/60 border border-slate-700/60 rounded-lg px-2.5 py-1 text-[11px] text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+          >
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-900 bg-[#070b12] py-8 px-4 text-center text-xs text-slate-500">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2 text-slate-400">
+          <span class="text-cyan-400">🛡️</span>
+          <span class="font-bold text-slate-200">GameTrade Hub</span>
+          <span>• โครงงานระบบซื้อขายไอดีเกม (Class Project Proposal)</span>
+        </div>
+
+        <div class="text-slate-400 text-[11px]">
+          <span>ผู้จัดทำ: <strong>นายณัฐชนน สิงห์ศรี</strong> รหัสนักศึกษา <strong>68114640228</strong></span>
+        </div>
+
+        <div class="text-slate-500 text-[11px]">
+          <span>Base: <strong>Django Python</strong> | Frontend: <strong>Tailwind CSS, JS & AlpineJS</strong></span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- AlpineJS + Tailwind Entrypoint Script -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

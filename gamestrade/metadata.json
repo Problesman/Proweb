@@ -1,0 +1,6 @@
+{
+  "name": "GameTrade Hub",
+  "description": "เว็บแอปพลิเคชันศูนย์กลางการซื้อขายไอดีเกม พัฒนาด้วย Django Python, Tailwind CSS, JS & AlpineJS พร้อมระบบคนกลาง (Middleman Admin), แชทเรียลไทม์ และระบบตรวจสอบสลิป",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
