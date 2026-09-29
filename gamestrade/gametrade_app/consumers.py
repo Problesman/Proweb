@@ -10,7 +10,15 @@ from .models import ChatRoom, ChatMessage, User
 
 class MiddlemanChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        user = self.scope.get('user')
+        if not user or not user.is_authenticated or user.status != 'Active':
+            await self.close(code=4401)
+            return
         self.room_id = self.scope['url_route']['kwargs']['room_id']
+        allowed = await self.can_access_room(user.user_id, self.room_id)
+        if not allowed:
+            await self.close(code=4403)
+            return
         self.room_group_name = f'chat_{self.room_id}'
 
         await self.channel_layer.group_add(
@@ -20,21 +28,28 @@ class MiddlemanChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        if hasattr(self, 'room_group_name'):
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
+        try:
+            data = json.loads(text_data)
+        except (TypeError, ValueError):
+            return
         message = data.get('message', '').strip()
         image_url = data.get('image_url', '').strip()
-        sender_id = data.get('sender_id')
+        user = self.scope['user']
+        sender_id = user.user_id
 
         if not message and not image_url:
             return
 
         saved_msg = await self.save_message(self.room_id, sender_id, message, image_url)
+        if saved_msg is None:
+            return
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -54,9 +69,20 @@ class MiddlemanChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event))
 
     @database_sync_to_async
+    def can_access_room(self, user_id, room_id):
+        try:
+            user = User.objects.get(user_id=user_id)
+            room = ChatRoom.objects.select_related('related_post').get(room_id=room_id)
+        except (User.DoesNotExist, ChatRoom.DoesNotExist):
+            return False
+        return user.status == 'Active' and (user.role == 'Admin' or room.user_id == user_id)
+
+    @database_sync_to_async
     def save_message(self, room_id, sender_id, text, image_url):
         room = ChatRoom.objects.get(room_id=room_id)
         sender = User.objects.get(user_id=sender_id)
+        if sender.status != 'Active' or (sender.role != 'Admin' and sender.user_id != room.user_id):
+            return None
         return ChatMessage.objects.create(
             room=room,
             sender=sender,

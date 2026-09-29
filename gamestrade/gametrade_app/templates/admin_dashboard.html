@@ -11,7 +11,7 @@
             <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 font-bold">
                 Admin & Middleman Escrow Console
             </span>
-            <h1 class="text-2xl font-black text-white mt-2">ศูนย์ควบคุมระบบ GameTrade Hub</h1>
+            <h1 class="text-2xl font-extrabold text-white mt-2">ศูนย์ควบคุมระบบ GameTrade Hub</h1>
             <p class="text-xs text-slate-400 mt-1">จัดการผู้ใช้, ตรวจสอบสลิปโอนเงิน, และควบคุมการซื้อขายผ่านคนกลาง</p>
         </div>
     </div>
@@ -20,35 +20,39 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
             <span class="text-xs text-slate-400">Total Users (สมาชิก)</span>
-            <div class="text-2xl font-black text-white mt-1">{{ total_users }}</div>
+            <div class="text-2xl font-extrabold text-white mt-1">{{ total_users }}</div>
             <span class="text-[11px] text-emerald-400 mt-1 block">Live Active</span>
         </div>
         <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
             <span class="text-xs text-slate-400">Total Posts (ไอดีที่ลงขาย)</span>
-            <div class="text-2xl font-black text-cyan-400 mt-1">{{ total_posts }}</div>
+            <div class="text-2xl font-extrabold text-cyan-400 mt-1">{{ total_posts }}</div>
             <span class="text-[11px] text-slate-400 mt-1 block">จากทุกหมวดหมู่เกม</span>
         </div>
         <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
             <span class="text-xs text-slate-400">Pending Orders (รอตรวจสลิป)</span>
-            <div class="text-2xl font-black text-amber-400 mt-1">{{ pending_orders }}</div>
+            <div class="text-2xl font-extrabold text-amber-400 mt-1">{{ pending_orders }}</div>
             <span class="text-[11px] text-amber-400 mt-1 block">ต้องการการยืนยันสลิป</span>
         </div>
         <div class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-lg">
             <span class="text-xs text-slate-400">Escrow Volume (ยอดเงินคนกลาง)</span>
-            <div class="text-2xl font-black text-emerald-400 mt-1">{{ completed_amount|floatformat:0 }} THB</div>
-            <span class="text-[11px] text-emerald-400 mt-1 block">สำเร็จเรียบร้อย</span>
+            <div class="text-2xl font-extrabold text-emerald-400 mt-1">{{ completed_amount|floatformat:0 }} THB</div>
+            <span class="text-[11px] text-emerald-400 mt-1 block">คำสั่งซื้อที่แอดมินอนุมัติแล้ว</span>
+            <div class="mt-3 border-t border-slate-800 pt-3">
+                <span class="text-xs text-slate-400">ค่าบริการแอดมินสะสม 3%</span>
+                <strong class="mt-1 block text-base text-emerald-400">{{ admin_fee_total|floatformat:2 }} THB</strong>
+            </div>
         </div>
     </div>
 
     <!-- Tabs with AlpineJS -->
-    <div class="flex gap-2 border-b border-slate-800 pb-3 text-xs font-bold">
-        <button @click="tab = 'overview'" :class="tab === 'overview' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
+    <div class="flex gap-4 overflow-x-auto border-b border-slate-800 pb-3 text-xs font-bold" role="tablist" aria-label="ส่วนจัดการ">
+        <button type="button" @click="tab = 'overview'" class="shrink-0 whitespace-nowrap" :class="tab === 'overview' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
             รายการสั่งซื้อและตรวจสลิป (Orders)
         </button>
-        <button @click="tab = 'users'" :class="tab === 'users' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
+        <button type="button" @click="tab = 'users'" class="shrink-0 whitespace-nowrap" :class="tab === 'users' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
             จัดการสมาชิกและแบน (Users)
         </button>
-        <button @click="tab = 'posts'" :class="tab === 'posts' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
+        <button type="button" @click="tab = 'posts'" class="shrink-0 whitespace-nowrap" :class="tab === 'posts' ? 'text-cyan-400 border-b-2 border-cyan-400 pb-2' : 'text-slate-400 hover:text-white'">
             จัดการโพสต์ขายไอดี (Posts)
         </button>
     </div>
@@ -56,8 +60,9 @@
     <!-- Orders Tab -->
     <div x-show="tab === 'overview'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
         <h2 class="text-sm font-bold text-white">รายการคำสั่งซื้อและตรวจสลิปเงินเข้าคนกลาง</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-300">
+        <p class="sm:hidden text-xs text-slate-400">เลื่อนตารางไปด้านข้างเพื่อดูข้อมูลทั้งหมด</p>
+        <div class="overflow-x-auto" role="region" aria-label="ตารางคำสั่งซื้อ" tabindex="0">
+            <table class="w-full min-w-[800px] text-left text-xs text-slate-300">
                 <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
                     <tr>
                         <th class="p-3">Order ID</th>
@@ -78,7 +83,7 @@
                         <td class="p-3 font-bold text-emerald-400">{{ order.amount|floatformat:0 }} THB</td>
                         <td class="p-3">
                             {% if order.slip_image %}
-                            <a href="{{ order.slip_image }}" target="_blank" class="text-cyan-400 hover:underline">ดูรูปสลิป</a>
+                            <a href="{{ order.display_slip_url }}" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">ดูรูปสลิป</a>
                             {% else %}
                             <span class="text-slate-500">-</span>
                             {% endif %}
@@ -88,15 +93,25 @@
                                 {{ order.status }}
                             </span>
                         </td>
-                        <td class="p-3 text-right space-x-1">
-                            {% if order.status == 'Pending' %}
-                            <a href="{% url 'admin_verify_order' order.order_id 'approve' %}" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded text-[11px]">
-                                อนุมัติสลิป
-                            </a>
-                            <a href="{% url 'admin_verify_order' order.order_id 'reject' %}" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px]">
-                                ปฏิเสธ
-                            </a>
-                            {% endif %}
+                        <td class="p-3">
+                            <div class="flex flex-wrap justify-end gap-1">
+                                <form method="post" action="{% url 'admin_contact_buyer' order.order_id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded text-[11px]">แชทผู้ซื้อ</button>
+                                </form>
+                                <form method="post" action="{% url 'admin_contact_seller' order.order_id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="px-2.5 py-1 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded text-[11px]">แชทผู้ขาย</button>
+                                </form>
+                                {% if order.status == 'Pending' %}
+                                <form method="post" action="{% url 'admin_verify_order' order.order_id 'approve' %}">
+                                    {% csrf_token %}<button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded text-[11px]">อนุมัติสลิป</button>
+                                </form>
+                                <form method="post" action="{% url 'admin_verify_order' order.order_id 'reject' %}">
+                                    {% csrf_token %}<button type="submit" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px]">ปฏิเสธ</button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
@@ -112,8 +127,9 @@
     <!-- Users Tab -->
     <div x-show="tab === 'users'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
         <h2 class="text-sm font-bold text-white">รายชื่อสมาชิกและการควบคุมสถานะ (Ban / Active)</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-300">
+        <p class="sm:hidden text-xs text-slate-400">เลื่อนตารางไปด้านข้างเพื่อดูข้อมูลทั้งหมด</p>
+        <div class="overflow-x-auto" role="region" aria-label="ตารางสมาชิก" tabindex="0">
+            <table class="w-full min-w-[650px] text-left text-xs text-slate-300">
                 <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
                     <tr>
                         <th class="p-3">User ID</th>
@@ -157,8 +173,9 @@
     <!-- Posts Tab -->
     <div x-show="tab === 'posts'" class="bg-[#0f172a] rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
         <h2 class="text-sm font-bold text-white">รายการไอดีเกมทั้งหมดในระบบ</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-300">
+        <p class="sm:hidden text-xs text-slate-400">เลื่อนตารางไปด้านข้างเพื่อดูข้อมูลทั้งหมด</p>
+        <div class="overflow-x-auto" role="region" aria-label="ตารางโพสต์" tabindex="0">
+            <table class="w-full min-w-[700px] text-left text-xs text-slate-300">
                 <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px]">
                     <tr>
                         <th class="p-3">ID</th>

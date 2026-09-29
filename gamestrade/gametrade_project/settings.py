@@ -10,7 +10,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-gametrade-hub-secret-key-68114640228'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-local-development-only')
 
 DEBUG = True
 
@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     'rest_framework',
     
     # Local Apps
-    'gametrade_app',
+    'gametrade_app.apps.GameTradeAppConfig',
 ]
 
 MIDDLEWARE = [
@@ -48,7 +48,7 @@ ROOT_URLCONF = 'gametrade_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates', BASE_DIR / 'gametrade_app' / 'templates'],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

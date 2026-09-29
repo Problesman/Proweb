@@ -1,11 +1,8 @@
-"""
-Django Forms with Tailwind CSS styling
-Requirement 2.2.1: แบบฟอร์มรับข้อมูล 5 รูปแบบขึ้นไป (TextField, RadioButton, TextArea, CheckBox, DropdownList, DatetimePicker, FileBrowse)
-"""
+"""Django forms for authentication, listings, and orders."""
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import User, GamePost, GameCategory, Order
+from .models import User, GamePost, Order
 
 _INPUT = 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400'
 
@@ -36,105 +33,78 @@ class RegisterForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['password1'].widget.attrs.update({'class': _INPUT, 'placeholder': 'รหัสผ่าน'})
+        self.fields['password1'].widget.attrs.update({
+            'class': _INPUT,
+            'placeholder': 'รหัสผ่าน',
+            'aria-describedby': 'password-requirements',
+        })
         self.fields['password2'].widget.attrs.update({'class': _INPUT, 'placeholder': 'ยืนยันรหัสผ่าน'})
 
 class GamePostForm(forms.ModelForm):
-    # Component 6: DatetimePicker
-    scheduled_delivery = forms.DateTimeField(
-        required=False,
-        widget=forms.DateTimeInput(attrs={
-            'type': 'datetime-local',
-            'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400'
-        }),
-        label="เวลาที่พร้อมส่งมอบไอดี"
-    )
-
     class Meta:
         model = GamePost
-        fields = [
-            'title', 'category', 'price', 'description', 'status',
-            'server', 'rank', 'level', 'skins_count', 'original_email',
-            'battle_pass', 'secondary_verification', 'image', 'game_credentials_note'
-        ]
-        # Custom Tailwind widgets matching the 7 input components
+        fields = ['title', 'category', 'price', 'rank', 'description', 'image']
         widgets = {
-            # Component 1: TextField
             'title': forms.TextInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
-                'placeholder': 'เช่น [TH] Valorant Radiant Peak มีสกิน Reaver + Kuronami มีดแชมเปี้ยน'
+                'class': _INPUT, 'placeholder': 'เช่น ไอดี Valorant แรงค์ Immortal'
             }),
             'price': forms.NumberInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
-                'placeholder': 'เช่น 4500'
-            }),
-            'server': forms.TextInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
-                'placeholder': 'เช่น Asia / Thailand'
+                'class': _INPUT, 'placeholder': 'เช่น 4500', 'min': '0.01', 'step': '0.01',
+                'aria-describedby': 'seller-fee-notice'
             }),
             'rank': forms.TextInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
-                'placeholder': 'เช่น Immortal 3 / Supreme'
+                'class': _INPUT, 'placeholder': 'เช่น Immortal 3'
             }),
-            'level': forms.NumberInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400'
-            }),
-            'skins_count': forms.NumberInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400'
-            }),
-            
-            # Component 2: DropdownList
             'category': forms.Select(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400'
+                'class': _INPUT
             }),
-            
-            # Component 3: TextArea
             'description': forms.Textarea(attrs={
-                'rows': 4,
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
+                'rows': 5, 'class': _INPUT,
                 'placeholder': 'ระบุรายละเอียดไอดี สกิน อาวุธ ประวัติการเล่น หรือของสะสม'
-            }),
-            'game_credentials_note': forms.TextInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
-                'placeholder': 'ไอดี/รหัสผ่านที่จะมอบให้คนกลางตรวจสอบเมื่อมีคำสั่งซื้อ'
-            }),
-
-            # Component 4: RadioButton
-            'status': forms.RadioSelect(attrs={
-                'class': 'text-cyan-400 focus:ring-cyan-400 focus:ring-offset-slate-900'
-            }),
-
-            # Component 5: CheckBox
-            'original_email': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400'
-            }),
-            'battle_pass': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400'
-            }),
-            'secondary_verification': forms.CheckboxInput(attrs={
-                'class': 'w-4 h-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400'
-            }),
-
-            # Component 7: FileBrowse / Image URL
-            'image': forms.URLInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
-                'placeholder': 'https://images.unsplash.com/...'
             }),
         }
 
+    image = forms.ImageField(
+        required=False,
+        label='รูปภาพประกอบ',
+        widget=forms.ClearableFileInput(attrs={
+            'accept': 'image/*',
+            'class': _INPUT,
+        }),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get('image') and not (self.instance and self.instance.pk and self.instance.image):
+            self.add_error('image', 'กรุณาเลือกรูปภาพประกอบจากเครื่อง')
+        return cleaned
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image and hasattr(image, 'size') and image.size > 5 * 1024 * 1024:
+            raise forms.ValidationError('รูปภาพต้องมีขนาดไม่เกิน 5 MB')
+        return image
+
 
 class OrderSlipForm(forms.ModelForm):
+    slip_image = forms.ImageField(
+        label='เลือกรูปสลิปจากเครื่อง',
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*', 'class': _INPUT}),
+    )
+
     class Meta:
         model = Order
         fields = ['slip_image', 'notes']
         widgets = {
-            'slip_image': forms.URLInput(attrs={
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
-                'placeholder': 'ลิงก์สลิปโอนเงิน หรือรูปถ่ายสลิป'
-            }),
             'notes': forms.Textarea(attrs={
                 'rows': 2,
-                'class': 'w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400',
+                'class': _INPUT,
                 'placeholder': 'หมายเหตุเพิ่มเติมถึงคนกลาง (เช่น โอนจากธนาคารกสิกรไทย เวลา 14:30)'
             })
         }
+
+    def clean_slip_image(self):
+        image = self.cleaned_data['slip_image']
+        if image.size > 5 * 1024 * 1024:
+            raise forms.ValidationError('รูปสลิปต้องมีขนาดไม่เกิน 5 MB')
+        return image
