@@ -1,19 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}{% if mode == 'register' %}สมัครสมาชิก{% else %}เข้าสู่ระบบ{% endif %} - GameTrade Hub{% endblock %}
+{% block title %}{% if mode == 'register' %}สมัครสมาชิก{% elif admin_login %}เข้าสู่ระบบแอดมิน{% else %}เข้าสู่ระบบสมาชิก{% endif %} - GameTrade Hub{% endblock %}
 
 {% block content %}
 <div class="max-w-md mx-auto px-4 py-12">
     <div class="bg-[#0f172a] rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-5">
         <div>
-            <h1 class="text-xl font-black text-white">
-                {% if mode == 'register' %}สมัครสมาชิก GameTrade Hub{% else %}เข้าสู่ระบบ{% endif %}
+            <h1 class="text-xl font-extrabold text-white">
+                {% if mode == 'register' %}สมัครสมาชิก GameTrade Hub{% elif admin_login %}เข้าสู่ระบบแอดมิน{% else %}เข้าสู่ระบบสมาชิก{% endif %}
             </h1>
-            <p class="text-xs text-slate-400 mt-1">ใช้บัญชีสมาชิกเพื่อลงขายไอดี ซื้อผ่านคนกลาง และแชท Escrow</p>
+            <p class="text-xs text-slate-400 mt-1">{% if admin_login %}สำหรับบัญชีที่ได้รับสิทธิ์ Admin เท่านั้น{% else %}ใช้บัญชีสมาชิกเพื่อลงขายไอดี ซื้อผ่านคนกลาง และแชท Escrow{% endif %}</p>
         </div>
 
         <form method="POST" class="space-y-4">
             {% csrf_token %}
+            {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
             {% if form.non_field_errors %}
                 <div class="p-3 rounded-xl text-xs bg-rose-950/70 border border-rose-800 text-rose-300">{{ form.non_field_errors }}</div>
             {% endif %}
@@ -21,19 +22,33 @@
                 <div>
                     <label class="text-xs font-bold text-slate-300 block mb-1">{{ field.label }}</label>
                     {{ field }}
+                    {% if mode == 'register' and field.name == 'password1' %}
+                        <div id="password-requirements" class="mt-2 rounded-xl border border-slate-700 bg-slate-800/50 p-3 text-[11px] leading-relaxed text-slate-300">
+                            <p class="font-semibold text-white">เงื่อนไขการตั้งรหัสผ่าน</p>
+                            <ul class="list-disc pl-5 mt-1 space-y-1.5">
+                                <li><strong>ยาวอย่างน้อย 8 ตัวอักษร</strong> โดยนับตัวอักษร ตัวเลข และสัญลักษณ์รวมกัน</li>
+                                <li><strong>ไม่คล้ายข้อมูลส่วนตัวมากเกินไป</strong> รวมถึงชื่อผู้ใช้ อีเมล ชื่อ และนามสกุล</li>
+                                <li><strong>ไม่ใช้รหัสผ่านที่พบได้ทั่วไป</strong> เพราะเป็นรหัสที่ผู้อื่นเดาได้ง่าย</li>
+                                <li><strong>ไม่เป็นตัวเลขทั้งหมด</strong> สามารถมีตัวเลขได้ แต่ต้องมีอักขระชนิดอื่นร่วมด้วย</li>
+                            </ul>
+                            <p class="mt-2 text-slate-400">ตัวอย่างรหัสผ่านที่ผ่านเงื่อนไข: <code>Cloud!Mango27River</code></p>
+                        </div>
+                    {% endif %}
                     {% if field.errors %}
                         <p class="text-[11px] text-rose-400 mt-1">{{ field.errors|striptags }}</p>
                     {% endif %}
                 </div>
             {% endfor %}
             <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs">
-                {% if mode == 'register' %}สมัครสมาชิก{% else %}เข้าสู่ระบบ{% endif %}
+                {% if mode == 'register' %}สมัครสมาชิก{% elif admin_login %}เข้าสู่ระบบแอดมิน{% else %}เข้าสู่ระบบสมาชิก{% endif %}
             </button>
         </form>
 
         <p class="text-xs text-slate-400 text-center">
             {% if mode == 'register' %}
                 มีบัญชีแล้ว? <a href="{% url 'login' %}" class="text-cyan-400 font-bold">เข้าสู่ระบบ</a>
+            {% elif admin_login %}
+                สมาชิกทั่วไป? <a href="{% url 'login' %}" class="text-cyan-400 font-bold">เข้าสู่ระบบสมาชิก</a>
             {% else %}
                 ยังไม่มีบัญชี? <a href="{% url 'register' %}" class="text-cyan-400 font-bold">สมัครสมาชิก</a>
             {% endif %}

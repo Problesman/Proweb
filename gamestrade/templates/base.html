@@ -1,0 +1,222 @@
+{% load static %}<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GameTrade Hub - ตลาดซื้อขายไอดีเกมและคนกลาง {% endblock %}</title>
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('gametrade-theme') === 'dark' ? 'dark' : 'light';
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    </script>
+
+    <!-- Google Fonts: Kanit for Thai text, Poppins for the Latin wordmark -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (CDN / Play) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link rel="stylesheet" href="{% static 'css/site.css' %}">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Kanit', 'Poppins', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- AlpineJS for Frontend Interactivity (Requirement: JS & AlpineJS) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+      body {
+        font-family: 'Kanit', 'Poppins', sans-serif;
+        background-color: #0b0f17;
+        color: #f1f5f9;
+      }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#0b0f17] text-slate-100" x-data="{ mobileMenu: false }">
+    {% include "partials/icon_symbols.html" %}
+    <div class="site-topbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-[11px] font-semibold">
+            <span>GameTrade Hub</span><span>ซื้อขายไอดีเกมผ่านคนกลาง</span>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur-md border-b border-cyan-950/60 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between gap-2 h-16">
+
+                <!-- Logo & Project Identity -->
+                <div class="flex items-center gap-3 min-w-0">
+                    <a href="{% url 'index' %}" class="flex items-center gap-2.5 min-w-0 group">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 p-0.5 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform flex items-center justify-center">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.8 8h10.4a3.5 3.5 0 0 1 3.4 2.7l1.1 5a2.6 2.6 0 0 1-4.3 2.5l-2.1-1.9H8.7l-2.1 1.9a2.6 2.6 0 0 1-4.3-2.5l1.1-5A3.5 3.5 0 0 1 6.8 8Z"/><path d="M7 11.5v4m-2-2h4"/><circle cx="16" cy="12" r="1" fill="#fff" stroke="none"/><circle cx="18.5" cy="14.5" r="1" fill="#fff" stroke="none"/></svg>
+                        </div>
+                        <div class="brand-wordmark">
+                            <span class="text-lg font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">
+                                GAMETRADE HUB
+                            </span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden lg:flex items-center gap-4 text-xs font-semibold">
+                    <a href="{% url 'index' %}" class="px-3 py-1.5 rounded-lg text-cyan-400 bg-cyan-950/40 border border-cyan-800/50">หน้าแรก</a>
+                    <a href="{% url 'create_post' %}" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">+ ลงขายไอดี</a>
+                    {% if user.is_authenticated and user.role == 'Admin' %}
+                    <a href="{% url 'admin_dashboard' %}" class="px-3 py-1.5 rounded-lg text-purple-300 bg-purple-950/40 border border-purple-800/50">Admin Console</a>
+                    {% endif %}
+                </div>
+
+                <!-- User Profile / Auth -->
+                <div class="flex items-center gap-1 sm:gap-3 shrink-0">
+                    <button type="button" data-theme-toggle aria-label="สลับเป็นโหมดมืด" aria-pressed="false" class="h-9 px-2 sm:px-3 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-xs font-bold flex items-center gap-1.5" title="สลับโหมดสี">
+                        <svg class="w-4 h-4" aria-hidden="true"><use data-theme-icon href="#icon-moon"></use></svg><span data-theme-label class="hidden sm:inline">Dark</span>
+                    </button>
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center gap-2">
+                            <img src="{% static 'images/profile.jpg' %}" class="w-9 h-9 rounded-full border border-cyan-500/60 object-cover" alt="โปรไฟล์ {{ user.username }}">
+                            <div class="text-left hidden lg:block">
+                                <div class="max-w-24 truncate text-xs font-bold text-white">{{ user.username }}</div>
+                                <span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">{{ user.role }}</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'logout' %}" class="hidden lg:inline-block px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white">ออกจากระบบ</a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="px-3 py-1.5 text-xs font-bold bg-cyan-500 text-slate-950 rounded-lg">เข้าสู่ระบบ</a>
+                    <a href="{% url 'admin_login' %}" class="hidden lg:inline-block px-3 py-1.5 text-xs font-bold text-purple-300">แอดมิน</a>
+                    {% endif %}
+                    <button type="button" class="lg:hidden flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300" @click="mobileMenu = !mobileMenu" :aria-expanded="mobileMenu" aria-controls="mobile-navigation" aria-label="เปิดหรือปิดเมนู">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                    </button>
+                </div>
+
+            </div>
+            <div id="mobile-navigation" x-show="mobileMenu" x-cloak class="lg:hidden border-t border-slate-800 py-3">
+                <div class="flex flex-col gap-1 text-sm font-semibold">
+                    <a href="{% url 'index' %}" class="rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-800">หน้าแรก</a>
+                    <a href="{% url 'create_post' %}" class="rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-800">ลงขายไอดี</a>
+                    {% if user.is_authenticated and user.role == 'Admin' %}<a href="{% url 'admin_dashboard' %}" class="rounded-lg px-3 py-2 text-purple-300 hover:bg-slate-800">Admin Console</a>{% endif %}
+                    {% if user.is_authenticated %}
+                    <div class="px-3 py-2 text-xs text-slate-400">{{ user.username }} · {{ user.role }}</div>
+                    <a href="{% url 'logout' %}" class="rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-800">ออกจากระบบ</a>
+                    {% else %}
+                    <a href="{% url 'admin_login' %}" class="rounded-lg px-3 py-2 text-purple-300 hover:bg-slate-800">เข้าสู่ระบบแอดมิน</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1">
+        {% if messages %}
+            <div class="max-w-7xl mx-auto px-4 mt-4">
+                {% for message in messages %}
+                    <div class="p-3 mb-2 rounded-xl text-xs font-medium border {% if message.tags == 'error' %}bg-rose-950/70 border-rose-800 text-rose-300{% else %}bg-emerald-950/70 border-emerald-800 text-emerald-300{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer mt-auto">
+        <div class="site-footer-main">
+            <div class="site-footer-about">
+                <a href="{% url 'index' %}" class="site-footer-brand" aria-label="GameTrade Hub หน้าแรก">
+                    <span class="site-footer-mark"><svg aria-hidden="true"><use href="#icon-gamepad"></use></svg></span>
+                    <span class="site-footer-brand-name">GameTrade <strong>Hub</strong></span>
+                </a>
+                <p>ศูนย์กลางซื้อขายไอดีเกมออนไลน์ ค้นหาไอดีที่สนใจ และติดต่อซื้อขายผ่านแอดมินในที่เดียว</p>
+                <p>มีช่องแชทให้ผู้ซื้อ-ผู้ขาย พูดคุยกับแอดมิน</p>
+            </div>
+
+            <div class="site-footer-column">
+                <h2>Contact</h2>
+                <ul class="site-footer-contact">
+                    <li><svg aria-hidden="true"><use href="#icon-message"></use></svg><span>natchanon.si.68@ubu.ac.th</span></li>
+                    <li><svg aria-hidden="true"><use href="#icon-message"></use></svg><span>0hmn_ssss</span></li>
+                    <li><svg aria-hidden="true"><use href="#icon-shield-check"></use></svg><span>ปลอดภัย 100%</span></li>
+                    <li><svg aria-hidden="true"><use href="#icon-gamepad"></use></svg><span>เปิดตลอดตอนว่าง</span></li>
+                </ul>
+            </div>
+
+            <div class="site-footer-column">
+                <h2>Contact Us</h2>
+                <div class="site-footer-community">
+                    <div class="site-footer-community-banner"><span class="site-footer-mini-mark"><svg aria-hidden="true"><use href="#icon-gamepad"></use></svg></span><strong>GameTrade Hub</strong></div>
+                    <div class="site-footer-community-body">
+                        <h3>ติดต่อแอดมิน</h3>
+                        <p>สอบถามเรื่องข้อมูลการซื้อขาย หรืออื่นๆ</p>
+                        {% if user.is_authenticated %}
+                        <button type="button" @click="$dispatch('open-support-chat')" class="site-footer-chat-link"><svg aria-hidden="true"><use href="#icon-message"></use></svg> Chat with Admin</button>
+                        {% else %}
+                        <a href="{% url 'login' %}" class="site-footer-chat-link"><svg aria-hidden="true"><use href="#icon-message"></use></svg> เข้าสู่ระบบเพื่อแชท</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="site-footer-bottom">
+            <div class="site-footer-bottom-inner">GameTrade Hub © {% now "Y" %}</div>
+        </div>
+    </footer>
+    {% if user.is_authenticated %}
+    <div hidden>{% csrf_token %}</div>
+    {% if user.role == 'Admin' %}
+    <div x-data="adminSupportChat()" @open-support-chat.window="open=true; loadRooms()" x-cloak class="support-chat-widget fixed bottom-5 right-5 z-50">
+      <section x-show="open" x-transition class="support-chat-panel mb-3 w-[min(24rem,calc(100vw-2.5rem))] h-[28rem] rounded-2xl border border-purple-800 bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
+        <header class="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700"><div class="text-sm font-bold text-white">แชทผู้ใช้</div><button type="button" @click="open=false" class="text-slate-300" aria-label="ปิดแชท">✕</button></header>
+        <div class="flex min-h-0 flex-1"><aside class="w-28 overflow-y-auto border-r border-slate-800"><template x-for="room in rooms" :key="room.room_id"><button @click="select(room)" class="block w-full px-2 py-3 text-left text-[10px] text-slate-200 hover:bg-slate-800" x-text="room.label"></button></template></aside>
+          <div class="flex min-w-0 flex-1 flex-col"><div class="min-h-0 flex-1 overflow-y-auto p-3 space-y-2" x-ref="messages"><template x-for="msg in messages" :key="msg.id"><div :class="msg.sender_id === currentUserId ? 'text-right' : 'text-left'"><span class="inline-block max-w-[95%] rounded-xl px-3 py-2 text-xs break-words" :class="msg.sender_id === currentUserId ? 'bg-purple-500 text-white' : 'bg-slate-800 text-white'"><span x-text="msg.text"></span><span class="block text-[9px] opacity-60" x-text="msg.sender_name+' · '+msg.time"></span></span></div></template><div x-show="!roomId" class="mt-8 text-center text-[10px] text-slate-500">เลือกผู้ใช้เพื่อเปิดแชท</div></div>
+          <a x-show="roomId" :href="'/chat/' + roomId + '/'" class="px-3 py-1 text-[10px] text-purple-300">เปิดห้องแชทแบบเต็ม</a>
+          <form @submit.prevent="send" class="flex gap-1 border-t border-slate-700 p-2"><input x-model="text" class="min-w-0 flex-1 rounded-lg bg-slate-800 px-2 py-2 text-xs text-white" placeholder="พิมพ์ข้อความ..." maxlength="2000"><button class="rounded-lg bg-purple-500 px-2 text-xs font-bold">ส่ง</button></form></div></div>
+      </section><button type="button" @click="open=!open; if(open) loadRooms()" class="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-purple-500 text-white shadow-lg" aria-label="เปิดหรือปิดแชทผู้ใช้"><svg class="w-7 h-7" aria-hidden="true"><use href="#icon-message"></use></svg></button>
+    </div>
+    <script>
+      function adminSupportChat(){return {open:false,rooms:[],roomId:null,messages:[],text:'',currentUserId:{{ user.user_id }},async loadRooms(){const r=await fetch('{% url "admin_support_rooms" %}');if(r.ok){const d=await r.json();this.rooms=d.rooms;}},async select(room){this.roomId=room.room_id;await this.refresh();},async refresh(){if(!this.roomId)return;const r=await fetch('/support-chat/'+this.roomId+'/messages/');if(r.ok){const d=await r.json();this.messages=d.messages;this.$nextTick(()=>{if(this.$refs.messages)this.$refs.messages.scrollTop=this.$refs.messages.scrollHeight;});}},async send(){const v=this.text.trim();if(!v||!this.roomId)return;const r=await fetch('/support-chat/'+this.roomId+'/send/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':document.cookie.split('; ').find(x=>x.startsWith('csrftoken='))?.split('=')[1]||''},body:JSON.stringify({text:v})});if(r.ok){this.text='';await this.refresh();}},init(){setInterval(()=>{if(this.open&&this.roomId)this.refresh();if(this.open)this.loadRooms();},4000);}}}
+    </script>
+    {% else %}
+    <div x-data="supportChat()" @open-support-chat.window="open=true; load()" x-cloak class="support-chat-widget fixed bottom-5 right-5 z-50">
+      <section x-show="open" x-transition class="support-chat-panel mb-3 w-[min(22rem,calc(100vw-2.5rem))] h-96 rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col overflow-hidden">
+        <header class="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700"><div><div class="text-sm font-bold text-white">ติดต่อแอดมิน</div><div class="text-[10px] text-slate-400">แชทส่วนตัวกับ Admin</div></div><button type="button" @click="open = false" class="text-slate-300 hover:text-white" aria-label="ปิดแชท">✕</button></header>
+        <div x-show="purchaseRooms.length" class="px-3 py-2 border-b border-slate-700"><div class="text-[10px] text-cyan-300 font-bold mb-1">แชทซื้อขายและรับเงิน</div><template x-for="room in purchaseRooms" :key="room.room_id"><a :href="'/chat/' + room.room_id + '/'" x-text="room.title" class="block text-[11px] text-white hover:text-cyan-300 truncate"></a></template></div>
+        <div class="min-h-0 flex-1 overflow-y-auto p-3 space-y-2" x-ref="messages"><template x-for="msg in messages" :key="msg.id"><div :class="msg.sender_id === currentUserId ? 'text-right' : 'text-left'"><span class="inline-block max-w-[90%] rounded-xl px-3 py-2 text-xs break-words" :class="msg.sender_id === currentUserId ? 'bg-cyan-600 text-slate-950' : 'bg-slate-800 text-white'"><span x-text="msg.text"></span><span class="block text-[9px] opacity-60" x-text="msg.sender_name + ' · ' + msg.time"></span></span></div></template><div x-show="!roomId" class="text-xs text-slate-400 text-center mt-8">เริ่มส่งข้อความถึงทีมแอดมินได้เลย</div></div>
+        <form @submit.prevent="send" class="p-2 border-t border-slate-700 flex gap-2"><input x-model="text" class="flex-1 min-w-0 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-xs text-white" placeholder="พิมพ์ข้อความ..." maxlength="2000"><button class="rounded-lg bg-cyan-500 px-3 text-xs font-bold text-slate-950">ส่ง</button></form>
+      </section>
+      <button type="button" @click="open = !open; if(open) load()" class="relative ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-lg shadow-cyan-900/50" :aria-expanded="open" aria-label="เปิดหรือปิดแชท"><svg class="w-7 h-7" aria-hidden="true"><use href="#icon-message"></use></svg><span x-show="purchaseRooms.length" x-text="purchaseRooms.length" class="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-rose-500 px-1 text-[10px] leading-5 text-white font-bold"></span></button>
+    </div>
+    <script>
+      function supportChat() { return {
+        open: false, text: '', roomId: null, messages: [], purchaseRooms: [], currentUserId: {{ user.user_id }}, loading: false,
+        async loadPurchases() { const r=await fetch('{% url "my_purchase_rooms" %}'); if(r.ok){const d=await r.json();this.purchaseRooms=d.rooms;} },
+        async load() { this.loadPurchases(); if(this.roomId || this.loading) return; this.loading=true; try { const r=await fetch('{% url "support_chat" %}'); if(r.ok){const d=await r.json();this.roomId=d.room_id;this.messages=d.messages;this.scroll();} } finally {this.loading=false;} },
+        async send() { const value=this.text.trim(); if(!value)return; await this.load(); if(!this.roomId)return; const r=await fetch('{% url "support_chat_send" %}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':this.cookie('csrftoken')},body:JSON.stringify({text:value})}); if(r.ok){const d=await r.json();this.messages.push(d.message);this.text='';this.scroll();} },
+        async poll() { if(this.open && this.roomId){const r=await fetch('/support-chat/'+this.roomId+'/messages/');if(r.ok){const d=await r.json();this.messages=d.messages;this.scroll();}} },
+        scroll(){this.$nextTick(()=>{if(this.$refs.messages)this.$refs.messages.scrollTop=this.$refs.messages.scrollHeight;});},
+        cookie(name){return document.cookie.split('; ').find(row=>row.startsWith(name+'='))?.split('=')[1]||'';},
+        init(){this.loadPurchases();setInterval(()=>this.poll(),4000);setInterval(()=>this.loadPurchases(),10000);}
+      } }
+    </script>
+    {% endif %}
+    {% endif %}
+    <script defer src="{% static 'js/site.js' %}"></script>
+
+</body>
+</html>

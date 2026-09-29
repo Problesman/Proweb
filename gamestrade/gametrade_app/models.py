@@ -6,6 +6,7 @@ Author: นายณัฐชนน สิงห์ศรี รหัสนั�
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.templatetags.static import static
 
 # -------------------------------------------------------------
 # Model 1: User (ผู้ใช้งาน)
@@ -13,7 +14,7 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('Member', 'Member (สมาชิกผู้ซื้อ/ผู้ขาย)'),
-        ('Admin', 'Admin (ผู้ดูแลระบบ & คนกลาง Escrow)'),
+        ('Admin', 'แอดมิน (คนกลาง Escrow)'),
     )
     STATUS_CHOICES = (
         ('Active', 'Active (ปกติ)'),
@@ -37,13 +38,19 @@ class User(AbstractUser):
 class GameCategory(models.Model):
     category_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, unique=True, verbose_name="ชื่อเกม")
-    logo = models.URLField(max_length=500, verbose_name="รูปภาพโลโก้")
+    logo = models.CharField(max_length=500, verbose_name="รูปภาพโลโก้")
 
     class Meta:
         verbose_name_plural = "Game Categories"
 
     def __str__(self):
         return self.name
+
+    @property
+    def display_logo_url(self):
+        if not self.logo:
+            return ''
+        return self.logo if self.logo.startswith(('https://', 'http://', '/')) else static(self.logo)
 
 
 # -------------------------------------------------------------
@@ -60,7 +67,7 @@ class GamePost(models.Model):
     title = models.CharField(max_length=255, verbose_name="หัวข้อโพสต์")
     description = models.TextField(verbose_name="รายละเอียดบัญชีเกม")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="ราคา (THB)")
-    image = models.URLField(max_length=500, verbose_name="รูปภาพประกอบ")
+    image = models.ImageField(upload_to='posts/', blank=True, verbose_name="รูปภาพประกอบ")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Available')
     
     server = models.CharField(max_length=100, blank=True, null=True, verbose_name="เซิร์ฟเวอร์")
@@ -79,6 +86,13 @@ class GamePost(models.Model):
     def __str__(self):
         return f"[{self.category.name}] {self.title} - {self.price} THB"
 
+    @property
+    def display_image_url(self):
+        if not self.image:
+            return self.category.display_logo_url
+        name = str(self.image)
+        return name if name.startswith(('https://', 'http://')) else self.image.url
+
 
 # -------------------------------------------------------------
 # Model 4: Order (การสั่งซื้อและแนบสลิป)
@@ -92,7 +106,7 @@ class Order(models.Model):
 
     order_id = models.AutoField(primary_key=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="จำนวนเงิน")
-    slip_image = models.URLField(max_length=500, verbose_name="ไฟล์สลิปการโอน")
+    slip_image = models.ImageField(upload_to='slips/', verbose_name="รูปสลิปการโอน")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     notes = models.TextField(blank=True, null=True, verbose_name="หมายเหตุ")
     
@@ -102,6 +116,13 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.order_id} - {self.buyer.username} ({self.amount} THB)"
+
+    @property
+    def display_slip_url(self):
+        if not self.slip_image:
+            return ''
+        name = str(self.slip_image)
+        return name if name.startswith(('https://', 'http://')) else self.slip_image.url
 
 
 # -------------------------------------------------------------

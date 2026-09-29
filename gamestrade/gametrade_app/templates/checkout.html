@@ -1,30 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}แนบสลิปคนกลาง - GameTrade Hub{% endblock %}
+{% block title %}ส่งสลิปให้แอดมิน - GameTrade Hub{% endblock %}
 
 {% block content %}
 <div class="max-w-lg mx-auto px-4 py-8">
-    <div class="bg-[#0f172a] rounded-3xl border border-cyan-800/40 p-6 shadow-2xl space-y-4">
-        <h1 class="text-lg font-black text-white">แนบสลิปโอนเงินเข้าคนกลาง</h1>
-        <p class="text-xs text-slate-400">ชำระ {{ post.price|floatformat:0 }} THB สำหรับไอดี: {{ post.title }}</p>
+    <div class="bg-[#0f172a] rounded-3xl border border-cyan-800/40 p-4 sm:p-6 shadow-2xl space-y-4">
+        <h1 class="text-lg font-extrabold text-white">ส่งสลิปให้แอดมินตรวจสอบ</h1>
+        <p class="text-xs text-slate-400">สำหรับไอดี {{ post.title }} ราคา {{ post.price|floatformat:0 }} THB หลังจากพูดคุยในห้องแชทซื้อขาย</p>
 
         <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs space-y-1">
-            <div class="flex justify-between"><span class="text-slate-400">บัญชีคนกลาง</span><span class="text-cyan-400 font-bold">ธนาคารกสิกรไทย 098-X-XXXXX-X</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">ชื่อบัญชี</span><span>GameTrade Escrow Account</span></div>
+            <div class="flex flex-col sm:flex-row sm:justify-between gap-1"><span class="text-slate-400">บัญชีคนกลาง</span><span class="text-cyan-400 font-bold break-all">ธนาคารกสิกรไทย 098-X-XXXXX-X</span></div>
+            <div class="flex flex-col sm:flex-row sm:justify-between gap-1"><span class="text-slate-400">ชื่อบัญชี</span><span class="break-words">GameTrade Escrow Account</span></div>
         </div>
 
-        <form method="POST" class="space-y-3">
+        <form method="POST" enctype="multipart/form-data" class="space-y-3" x-data="{ previewImage: '' }">
             {% csrf_token %}
-            {% for field in form %}
-                <div>
-                    <label class="text-xs font-bold text-slate-300 block mb-1">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}<p class="text-[11px] text-rose-400 mt-1">{{ field.errors|striptags }}</p>{% endif %}
-                </div>
-            {% endfor %}
-            <div class="flex gap-3 pt-2">
-                <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs">ยืนยันสลิปและเปิดห้องแชท</button>
-                <a href="{% url 'post_detail' post.post_id %}" class="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">ยกเลิก</a>
+            {% if form.non_field_errors %}<div class="text-xs text-rose-400">{{ form.non_field_errors }}</div>{% endif %}
+            <div>
+                <label for="id_slip_image" class="text-xs font-bold text-slate-300 block mb-1">เลือกรูปสลิปจากเครื่อง *</label>
+                <input type="file" name="slip_image" id="id_slip_image" accept="image/*" required @change="previewImage = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : ''" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                {% if form.slip_image.errors %}<p class="text-[11px] text-rose-400 mt-1">{{ form.slip_image.errors|striptags }}</p>{% endif %}
+                <template x-if="previewImage"><img :src="previewImage" alt="ตัวอย่างสลิป" class="mt-3 max-h-48 rounded-xl object-contain"></template>
+            </div>
+            <div>
+                <label for="{{ form.notes.id_for_label }}" class="text-xs font-bold text-slate-300 block mb-1">หมายเหตุ (ไม่บังคับ)</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}<p class="text-[11px] text-rose-400 mt-1">{{ form.notes.errors|striptags }}</p>{% endif %}
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-bold rounded-xl text-xs">ส่งสลิปให้แอดมิน</button>
+                <a href="{% url 'chat_room' room.room_id %}" class="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">กลับแชท</a>
             </div>
         </form>
     </div>

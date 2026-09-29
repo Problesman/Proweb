@@ -28,12 +28,11 @@ def setup():
 
     print("\n[2/3] กำลังเตรียมหมวดหมู่เกมสำหรับเลือกลงขาย...")
     categories_data = [
-        {"name": "Valorant", "logo": "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=120&h=120&q=80"},
-        {"name": "ROV (Realm of Valor)", "logo": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=120&h=120&q=80"},
-        {"name": "Genshin Impact", "logo": "https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=120&h=120&q=80"},
-        {"name": "Free Fire", "logo": "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=120&h=120&q=80"},
-        {"name": "League of Legends", "logo": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=120&h=120&q=80"},
-        {"name": "EA FC Mobile", "logo": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=120&h=120&q=80"},
+        {"name": "Valorant", "logo": "images/categories/valorant.png"},
+        {"name": "ROV (Realm of Valor)", "logo": "images/categories/rov.png"},
+        {"name": "League of Legends", "logo": "images/categories/lol.png"},
+        {"name": "Roblox", "logo": "images/categories/roblox.png"},
+        {"name": "Apex Legends", "logo": "images/categories/apex.png"},
     ]
 
     for cat in categories_data:
@@ -43,15 +42,19 @@ def setup():
 
     print("[OK] Game categories ready")
 
-    print("\n[3/3] ตรวจสอบบัญชีผู้ดูแลระบบ (Admin Superuser)...")
+    print("\n[3/3] ตรวจสอบบัญชีแอดมิน (Admin Superuser)...")
     if not User.objects.filter(username='admin').exists():
-        admin_user = User.objects.create_superuser(
-            username='admin',
-            email='admin@gametrade.com',
-            password='adminpassword123',
-            role='Admin'
-        )
-        print("  + สร้าง Superuser: admin (รหัสผ่าน: adminpassword123)")
+        admin_password = os.environ.get('GAMETRADE_ADMIN_PASSWORD')
+        if admin_password:
+            User.objects.create_superuser(
+                username='admin',
+                email='admin@gametrade.com',
+                password=admin_password,
+                role='Admin'
+            )
+            print("  + สร้าง Superuser: admin")
+        else:
+            print("  ! ตั้งค่า GAMETRADE_ADMIN_PASSWORD แล้วรัน setup_db.py อีกครั้งเพื่อสร้าง admin")
     else:
         print("  [OK] admin user already exists")
 
